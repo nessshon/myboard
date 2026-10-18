@@ -1,0 +1,156 @@
+.btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    transform 0.06s;
+}
+
+.btn:hover {
+  background: var(--hover);
+  border-color: var(--border-strong);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn svg {
+  color: var(--muted);
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 1px 2px rgba(16, 24, 40, 0.14);
+}
+
+.btn.primary svg,
+.btn.danger svg {
+  color: currentColor;
+}
+
+.btn.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn.danger {
+  background: var(--danger-solid);
+  border-color: var(--danger-solid);
+  color: var(--on-solid);
+  box-shadow: none;
+}
+
+.btn.danger:hover {
+  filter: brightness(1.07);
+}
+
+.btn.ghost {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+}
+
+.btn.ghost:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.btn.sm {
+  height: 28px;
+  padding: 0 10px 0 8px;
+  font-size: 12.5px;
+  gap: 5px;
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  flex: none;
+}
+
+.icon.sm {
+  width: 24px;
+  height: 24px;
+}
+
+.icon:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.icon[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn:disabled,
+.icon:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (min-width: 641px) {
+  .compact {
+    min-width: 96px;
+  }
+}
+
+@media (max-width: 640px) {
+  .btn {
+    height: 40px;
+  }
+
+  .icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .btn.sm {
+    height: 36px;
+  }
+
+  .icon.sm {
+    width: 36px;
+    height: 36px;
+  }
+
+  .compact {
+    width: 36px;
+    padding: 0;
+  }
+
+  .compact .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

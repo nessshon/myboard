@@ -1,0 +1,130 @@
+# myboard
+
+> myboard is a small self-hosted task tracker: projects with a kanban board of tasks, notes and labels. This file is the complete guide to its HTTP API for scripts and AI agents. The API is the standard PocketBase REST API plus a few myboard routes.
+
+- **Base URL:** the origin this file was fetched from (for `https://example.com/llms.txt` it is `https://example.com`). Below it is written as `$MB`.
+- **Authentication:** send a personal API token on every request: `Authorization: Bearer mbt_...`. A person creates it on the "Integrations" page. The token acts as that person and sees exactly what they see; there is no separate agent account. A token cannot issue or revoke tokens or change people: that is done in the web app.
+- **Format:** JSON in and out. Dates of records are UTC strings like `2026-10-16 09:30:00.000Z`. Text fields hold Markdown where noted.
+
+## Who am I
+
+`GET $MB/api/myboard/me` answers the token's own user: `{"id":"k2v7q0ox1lq5fcp","name":"Alex","username":"alex_dev","role":"member"}`. Use this `id` wherever a filter needs "me".
+
+## Data
+
+Each collection is at `$MB/api/collections/<name>/records`.
+
+**projects** — read for members, write for admins only.
+- `id`, `name` (1–60 chars), `key` (2–10 chars, `^[A-Z][A-Z0-9]+$`, prefix of task numbers, e.g. `MYB`), `description` (≤500), `members` (user ids), `archived` (bool), `color` (`#rrggbb`, lowercase, or empty).
+
+**tasks** — read and write for project members and admins.
+- `id`, `project` (project id; fixed after creation), `number` (set by the server, unique per project; a task is called `KEY-number`, e.g. `MYB-17`), `title` (1–200 chars), `description` (Markdown, ≤20000), `status` (`backlog`, `todo`, `in_progress`, `done`, `cancelled`), `priority` (`normal`, `high`, `urgent`), `assignee` (user id or empty; must be a member of the project), `labels` (label ids of the same project), `due` (`YYYY-MM-DD` or empty), `position` (number; lower is higher in its column), `author` (set by the server), `edited` (set by the server when a person changes the content, not the order; empty until then).
+- A new task goes to the top of its column. To move a task, PATCH `status` and, if order matters, `position`.
+
+**labels** — per project; members read and write.
+- `id`, `project`, `name` (1–24 chars, unique within the project), `color` (`#rrggbb`, lowercase).
+
+**notes** — per project. A new note is personal: only its author sees it. With `shared: true` every project member sees and edits it.
+- `id`, `project` (fixed), `title` (1–120), `body` (Markdown, ≤50000), `shared` (bool; only the author or an admin may change it), `position`, `author` (set by the server, fixed), `edited` (as on a task).
+
+**users** — read for anyone signed in; managed in the web app.
+- `id`, `name`, `username` (Telegram), `role` (`admin` or `member`), `deleted` (bool).
+
+## Queries
+
+List requests take these query parameters (URL-encode them, e.g. with `curl -G --data-urlencode`):
+- `filter` — e.g. `project.key = "MYB" && status != "done"`. Operators: `=`, `!=`, `>`, `<`, `~` (contains), `?=` (a list field such as `labels` has the value, e.g. `labels ?= "LABEL_ID"`), `&&`, `||`, parentheses. Use literal ids in filters; `@request.auth` is not allowed there.
+- `sort` — fields, `-` for descending: `sort=status,position` or `sort=-updated`. `status` sorts by its name, alphabetically.
+- `expand` — inline related records: `expand=project,assignee,labels`.
+- `page`, `perPage` (default 30, max 1000).
+
+A list answers `{"page":1,"perPage":30,"totalItems":2,"totalPages":1,"items":[...]}`. Records you may not see are simply absent from lists.
+
+Send changes one request at a time: `/api/batch` accepts only `position` changes (the board's reordering).
+
+## Recipes
+
+Set `MB` and `TOKEN` first. Every command below was run against a real instance.
+
+```sh
+MB=https://example.com
+TOKEN=mbt_...
+auth=(-H "Authorization: Bearer $TOKEN")
+```
+
+My open tasks across all projects, with their project:
+
+```sh
+ME=$(curl -s "${auth[@]}" "$MB/api/myboard/me" | jq -r .id)
+curl -sG "${auth[@]}" "$MB/api/collections/tasks/records" \
+  --data-urlencode "filter=assignee = \"$ME\" && status != \"done\" && status != \"cancelled\"" \
+  --data-urlencode 'expand=project' --data-urlencode 'sort=status,position'
+```
+
+Projects I can see (not archived):
+
+```sh
+curl -sG "${auth[@]}" "$MB/api/collections/projects/records" --data-urlencode 'filter=archived = false'
+```
+
+Find task MYB-17:
+
+```sh
+curl -sG "${auth[@]}" "$MB/api/collections/tasks/records" \
+  --data-urlencode 'filter=project.key = "MYB" && number = 17'
+```
+
+Create a task (the answer contains its `number`):
+
+```sh
+curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collections/tasks/records" \
+  -d '{"project":"PROJECT_ID","title":"Add a backup check","description":"Restore the latest backup into a scratch instance once a week.","status":"todo","priority":"high"}'
+```
+
+Move a task, assign it, set a due date (send only the fields you change):
+
+```sh
+curl -s "${auth[@]}" -H 'Content-Type: application/json' -X PATCH "$MB/api/collections/tasks/records/TASK_ID" \
+  -d '{"status":"in_progress","assignee":"USER_ID","due":"2026-10-30"}'
+```
+
+People to assign (members of a project are its `members` ids):
+
+```sh
+curl -sG "${auth[@]}" "$MB/api/collections/users/records" --data-urlencode 'filter=deleted = false'
+```
+
+Labels of a project, and a new one:
+
+```sh
+curl -sG "${auth[@]}" "$MB/api/collections/labels/records" --data-urlencode 'filter=project.key = "MYB"'
+curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collections/labels/records" \
+  -d '{"project":"PROJECT_ID","name":"backend","color":"#3b82f6"}'
+```
+
+Write a note and share it with the project:
+
+```sh
+curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collections/notes/records" \
+  -d '{"project":"PROJECT_ID","title":"Release checklist","body":"- backup\n- migrate\n- smoke test"}'
+curl -s "${auth[@]}" -H 'Content-Type: application/json' -X PATCH "$MB/api/collections/notes/records/NOTE_ID" \
+  -d '{"shared":true}'
+```
+
+Delete a task: `curl -s "${auth[@]}" -X DELETE "$MB/api/collections/tasks/records/TASK_ID"` (answers 204, cannot be undone).
+
+## Errors
+
+Errors answer `{"status":400,"message":"...","data":{...}}`.
+- **400** — invalid data; `data` names each field, e.g. `{"title":{"code":"validation_required","message":"Cannot be blank."}}`, or `validation_not_unique` for a label name already used in the project. Also a create the token's user is not allowed to make (a task in someone else's project).
+- **401** — the token is missing, wrong or revoked.
+- **403** — not allowed with a token or in a filter: issuing or revoking tokens, changing people, `@request` in `filter`.
+- **404** — the record does not exist **or** you may not see or change it; the API does not tell the two apart.
+- **429** — too many requests: at most 300 requests per 10 s and 20 creates per 5 s from one client. Wait and retry.
+
+## Good manners
+
+- Read before you write: look up ids by key, number or name instead of guessing.
+- Change only what you were asked to; PATCH only the fields you change.
+- Keep titles short; put details in `description` as Markdown.
+- Personal notes are private. Do not share a note unless asked.

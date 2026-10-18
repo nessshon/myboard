@@ -1,0 +1,42 @@
+.wrap {
+  display: inline-grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.select,
+.chev {
+  grid-area: 1 / 1;
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.select:hover:not(:focus-visible) {
+  border-color: var(--border-strong);
+}
+
+.chev {
+  justify-self: end;
+  margin-right: 8px;
+  pointer-events: none;
+  color: var(--muted);
+}
+
+/* Phones: 16px keeps iOS from zooming into the page; 40px as the other controls. */
+@media (max-width: 640px) {
+  .select {
+    height: 40px;
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,102 @@
+.rows {
+  margin: 0 -8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row {
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row:hover,
+.row:focus-within {
+  background: var(--hover);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 6px;
+}
+
+input.name {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border-color: transparent;
+  background: none;
+}
+
+input.name:hover:not(:focus) {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+input.name:focus {
+  background: var(--surface);
+}
+
+.del {
+  color: var(--muted);
+}
+
+.del:hover {
+  color: var(--danger);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 22px);
+  gap: 8px;
+  padding: 2px 0 6px 30px;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.swatch[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px currentColor;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .color,
+  .swatch {
+    width: 32px;
+    height: 32px;
+  }
+
+  input.name {
+    height: 40px;
+  }
+
+  .swatches {
+    grid-template-columns: repeat(8, 32px);
+    gap: 6px;
+    padding-left: 0;
+  }
+}

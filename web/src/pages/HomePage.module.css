@@ -1,0 +1,88 @@
+.page {
+  padding: 24px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+.projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  min-height: 150px;
+  padding: 18px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  text-decoration: none;
+  transition: box-shadow 0.12s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+:root[data-theme="dark"] .card:hover {
+  --surface: var(--hover);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.name {
+  min-width: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.people {
+  display: flex;
+}
+
+.people > * + * {
+  margin-left: -4px;
+}
+
+.people > * {
+  box-shadow: 0 0 0 2px var(--surface);
+  border-radius: 50%;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 16px 32px;
+  }
+
+  .projects {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card {
+    min-height: 0;
+  }
+}

@@ -1,0 +1,65 @@
+.dialog {
+  width: calc(100% - 32px);
+  max-width: var(--dialog-width, 440px);
+  margin: auto;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  scrollbar-width: none;
+}
+
+.dialog::-webkit-scrollbar {
+  display: none;
+}
+
+/* Older engines do not inherit custom properties into ::backdrop, hence the fallback. */
+.dialog::backdrop {
+  background: var(--overlay);
+}
+
+/* Opening eases in. Closing is instant: the content unmounts with the window, so a fade-out would
+   show an empty box. Engines without @starting-style simply open without the animation. */
+.dialog[open] {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.dialog[open]::backdrop {
+  transition: opacity 0.2s ease;
+}
+
+@starting-style {
+  .dialog[open] {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+
+  .dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open],
+  .dialog[open]::backdrop {
+    transition: none;
+  }
+}
+
+.body {
+  padding: 22px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  outline: none;
+  font-size: 16px;
+  font-weight: 600;
+}

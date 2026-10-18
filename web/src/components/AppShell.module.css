@@ -1,0 +1,626 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--side);
+}
+
+.side {
+  flex: none;
+  width: 64px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease;
+}
+
+.shell > .side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.wide {
+  width: 240px;
+}
+
+.top {
+  width: 240px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(var(--border), var(--border)) left 20px bottom / 200px 1px no-repeat;
+}
+
+.brand {
+  height: 64px;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 0 20px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logo {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.name {
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.nav {
+  width: 240px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 14px 12px 0;
+}
+
+.account {
+  width: 240px;
+  flex: none;
+  padding: 6px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: linear-gradient(var(--border), var(--border)) left 20px top / 200px 1px no-repeat;
+}
+
+.side:not(.wide) :is(.top, .account) {
+  background-size: 40px 1px;
+  background-position-x: 12px;
+}
+
+.account .profile {
+  padding: 6px 6px 8px;
+}
+
+.item {
+  position: relative;
+  width: 40px;
+  height: 36px;
+  padding: 0 9px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  text-decoration: none;
+  text-align: left;
+  transition: width 0.2s ease;
+}
+
+.wide .item {
+  width: 100%;
+}
+
+.projects .item {
+  scroll-margin-block: 16px;
+}
+
+.prow {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Safari also drags links unless told not to (draggable="false" covers the rest). */
+.prow .item {
+  -webkit-user-drag: none;
+}
+
+.wide .prow .item {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.lifted {
+  z-index: 1;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.grip {
+  display: none;
+}
+
+.more {
+  position: absolute;
+  right: 6px;
+  opacity: 0;
+}
+
+.prow:hover .more,
+.prow:focus-within .more {
+  opacity: 1;
+}
+
+.prow:has(.more) .item {
+  padding-right: 34px;
+}
+
+.side:not(.wide) .more {
+  display: none;
+}
+
+.projects::-webkit-scrollbar {
+  display: none;
+}
+
+.projects > *,
+.account > * {
+  flex: none;
+}
+
+@media (hover: hover) {
+  .item:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+}
+
+.item[aria-current="page"] {
+  background: var(--active);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.nico {
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.text {
+  flex: 1;
+}
+
+.name,
+.text,
+.labelText,
+.who,
+.ver,
+.repo {
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s;
+}
+
+.side:not(.wide) :is(.name, .text, .labelText, .who, .ver, .repo) {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.side:not(.wide) .badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 10px;
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px var(--side);
+}
+
+.label {
+  position: relative;
+  height: 24px;
+  margin: 0 0 2px;
+  padding: 0 4px 0 10px;
+  display: flex;
+  align-items: center;
+}
+
+.label::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  width: 22px;
+  height: 1px;
+  background: var(--border);
+  transition: opacity 0.12s ease;
+}
+
+.wide .label::after,
+.label:has(.add)::after {
+  opacity: 0;
+}
+
+.add {
+  flex: none;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.add:hover {
+  border-color: var(--border-strong);
+}
+
+.side:not(.wide) .add {
+  position: absolute;
+  left: 8px;
+  width: 24px;
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+
+.archive {
+  flex: none;
+  margin-bottom: 6px;
+}
+
+.item.out,
+.item.out:hover,
+.out .nico {
+  color: var(--danger);
+}
+
+.panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 8px 8px 8px 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  /* clip, not hidden: hidden makes the panel a scroll box, and the header would not stick. */
+  overflow: clip;
+  box-shadow: var(--shadow-sm);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px 0 12px;
+}
+
+.vsep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--border);
+  flex: none;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-left: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.whoName {
+  font-weight: 600;
+}
+
+.sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ver {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--hover);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.repo {
+  width: 36px;
+  height: 36px;
+  margin: 8px 10px 0 0;
+  border-radius: var(--r-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--muted);
+}
+
+.repo:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.group {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.projects {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-bottom: 12px;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.labelText {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.titleSlot {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.menu,
+.drawer {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .shell > .side,
+  .toggle,
+  .vsep {
+    display: none;
+  }
+
+  .menu {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+  }
+
+  .menu svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .panel {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .header {
+    height: 60px;
+    gap: 6px;
+    padding: 0 12px 0 4px;
+  }
+
+  .title {
+    font-size: 17px;
+  }
+
+  /* The geometry is set on the drawer itself, not only while it is :modal: closing drops :modal at
+     once, and the drawer would jump to the browser's centred dialog box mid-slide. */
+  .drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(320px, calc(100% - 56px));
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--side);
+    color: var(--text);
+    box-shadow: var(--shadow-lg);
+    touch-action: pan-y;
+  }
+
+  .drawer[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .account {
+    width: 100%;
+    padding: 6px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 0;
+    background: linear-gradient(var(--border), var(--border)) top / calc(100% - 56px) 1px no-repeat;
+  }
+
+  .drawer .top {
+    padding-bottom: 8px;
+    border-bottom: 0;
+    background: linear-gradient(var(--border), var(--border)) bottom / calc(100% - 56px) 1px
+      no-repeat;
+  }
+
+  .drawer:focus {
+    outline: none;
+  }
+
+  /* Older engines do not inherit custom properties into ::backdrop, hence the fallback. */
+  .drawer::backdrop {
+    background: var(--overlay);
+  }
+
+  .drawer,
+  .drawer::backdrop {
+    transition:
+      transform 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .drawer:not([open]) {
+    transform: translateX(-100%);
+  }
+
+  .drawer:not([open])::backdrop {
+    opacity: 0;
+  }
+
+  @starting-style {
+    .drawer[open] {
+      transform: translateX(-100%);
+    }
+
+    .drawer[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  .drawer .item {
+    height: 48px;
+    padding: 0 16px;
+    gap: 12px;
+    border-radius: var(--r-lg);
+    font-size: 15px;
+  }
+
+  .drawer .grip {
+    width: 28px;
+    height: 48px;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .drawer .more {
+    position: static;
+    opacity: 1;
+  }
+
+  .drawer .prow:has(.more) .item {
+    padding-right: 16px;
+  }
+
+  .drawer .lifted {
+    border-radius: var(--r-lg);
+  }
+
+  .drawer .item[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .drawer .prow:has([aria-current="page"]) {
+    border-radius: var(--r-lg);
+    background: var(--accent-soft);
+  }
+
+  .drawer .prow .item[aria-current="page"] {
+    background: none;
+  }
+
+  .drawer .nav {
+    padding: 8px 12px 0;
+    gap: 16px;
+  }
+
+  .drawer .brand {
+    height: 64px;
+    padding: 8px 16px 0 28px;
+  }
+
+  .drawer .repo {
+    width: 44px;
+    height: 44px;
+    margin-right: 14px;
+  }
+
+  .drawer .label {
+    height: 40px;
+    margin: 0;
+    padding: 0 16px;
+  }
+
+  .drawer .profile {
+    padding: 6px 4px 6px 12px;
+  }
+
+  .drawer > .side {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .drawer :is(.top, .nav) {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawer::backdrop {
+    transition: none;
+  }
+}

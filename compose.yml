@@ -1,0 +1,21 @@
+services:
+  myboard:
+    image: ghcr.io/nessshon/myboard:latest
+    build: .
+    container_name: myboard
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${MYBOARD_HOST:-127.0.0.1}:${MYBOARD_PORT:-8090}:8090"
+    volumes:
+      - ${MYBOARD_DATA:-myboard-data}:/myboard_data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  myboard-data:
+    name: myboard-data

@@ -1,0 +1,110 @@
+.md {
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.md > :first-child {
+  margin-top: 0;
+}
+
+.md > :last-child {
+  margin-bottom: 0;
+}
+
+.md p,
+.md ol,
+.md ul,
+.md pre,
+.md blockquote,
+.md table {
+  margin: 0 0 10px;
+}
+
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.md h1 {
+  font-size: 18px;
+}
+
+.md h2 {
+  font-size: 16px;
+}
+
+.md ol,
+.md ul {
+  padding-left: 22px;
+}
+
+.md li {
+  margin: 3px 0;
+}
+
+.md > :first-child > li:first-child {
+  margin-top: 0;
+}
+
+.md :global(.contains-task-list) {
+  list-style: none;
+  padding-left: 0;
+}
+
+.md :global(.task-list-item) input {
+  margin: 0 8px 0 0;
+  vertical-align: -2px;
+}
+
+.md code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--hover);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.md pre {
+  padding: 10px 12px;
+  background: var(--hover);
+  border-radius: var(--r-sm);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.md pre code {
+  padding: 0;
+  background: none;
+}
+
+.md blockquote {
+  padding-left: 12px;
+  border-left: 3px solid var(--border-strong);
+  color: var(--muted);
+}
+
+.md table {
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
+
+.md th,
+.md td {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 14px 0;
+}

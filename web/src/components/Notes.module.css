@@ -1,0 +1,174 @@
+.sec {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.head {
+  min-height: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.filters {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.strip {
+  position: relative;
+}
+
+.track {
+  display: flex;
+  gap: 12px;
+  padding: 10px 16px 18px;
+  margin: -10px -16px -18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  translate: 0 -50%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.arrow:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.left {
+  left: -12px;
+}
+
+.right {
+  right: -12px;
+}
+
+.note {
+  position: relative;
+  flex: 0 0 264px;
+  min-width: 0;
+  padding: 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+
+.note:hover {
+  box-shadow: var(--shadow-md);
+}
+
+:root[data-theme="dark"] .note:hover {
+  --surface: var(--hover);
+}
+
+.grab {
+  cursor: grab;
+}
+
+.ghost {
+  opacity: 0.4;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.open {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.two {
+  min-height: calc(2 * 1.5em);
+}
+
+.foot {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.access {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.who {
+  display: inline-flex;
+}
+
+.date {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.handle {
+  margin: -10px -12px -10px 0;
+}
+
+@media (max-width: 640px) {
+  .strip {
+    margin: 0 -16px;
+  }
+
+  .track {
+    margin: -3px 0;
+    padding: 3px 16px;
+    scroll-padding-inline: 16px;
+  }
+
+  .note {
+    flex-basis: 240px;
+  }
+
+  .arrow {
+    display: none;
+  }
+}

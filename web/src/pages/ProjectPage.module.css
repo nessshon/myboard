@@ -1,0 +1,109 @@
+.page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 24px 28px 32px;
+  min-width: 0;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.bannerText {
+  flex: 1;
+  color: var(--muted);
+}
+
+.notes {
+  min-width: 0;
+}
+
+.tasks {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.head {
+  min-height: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.filters {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.nothing {
+  margin: 0;
+  padding: 48px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  margin: 0 4px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.nobody {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--active);
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 0 0;
+    gap: 4px;
+  }
+
+  .banner {
+    margin: 0 16px 12px;
+  }
+
+  .notes {
+    padding: 0 16px 6px;
+  }
+
+  .tasks {
+    gap: 0;
+  }
+
+  .tasks .head {
+    padding: 0 16px;
+  }
+
+  .filters {
+    padding: 0 16px;
+    margin: 4px 0 8px;
+  }
+}

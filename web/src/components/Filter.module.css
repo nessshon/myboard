@@ -1,0 +1,145 @@
+.filter {
+  position: relative;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.filter:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.on {
+  --fill: var(--accent-soft);
+  border: 1px solid transparent;
+  background: var(--fill);
+  color: var(--accent-ink);
+}
+
+.on:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.filter > div {
+  height: 100%;
+}
+
+.trigger {
+  height: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: calc(var(--r-sm) - 1px);
+  color: inherit;
+  white-space: nowrap;
+}
+
+.on .trigger:hover {
+  --fill: var(--accent-soft-hover);
+  background: var(--fill);
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.chev {
+  opacity: 0.7;
+}
+
+.marks {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 2px;
+}
+
+.marks > span {
+  display: inline-flex;
+  border-radius: 50%;
+}
+
+.marks > span > * {
+  margin: 0;
+  box-shadow: 0 0 0 1.5px var(--fill);
+}
+
+.marks > span + span {
+  margin-left: -4px;
+}
+
+.marks > span:has(> :empty) + span,
+.marks > span + span:has(> :empty) {
+  margin-left: 3px;
+}
+
+.more {
+  margin-left: 4px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.reset {
+  height: 28px;
+  padding: 0 8px 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--r-sm);
+  color: var(--danger);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.reset:hover {
+  background: var(--hover);
+}
+
+.filter [role="menu"] {
+  top: calc(100% + 6px);
+}
+
+@media (max-width: 640px) {
+  .filter {
+    height: 36px;
+  }
+
+  .trigger {
+    padding: 0 8px;
+  }
+
+  .reset {
+    height: 36px;
+  }
+
+  .filter ~ .reset {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .filter ~ .reset .resetText {
+    display: none;
+  }
+
+  .filter,
+  .filter > div {
+    position: static;
+  }
+
+  .filter [role="menu"] {
+    left: 0;
+    right: auto;
+  }
+}

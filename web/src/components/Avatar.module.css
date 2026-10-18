@@ -1,0 +1,10 @@
+.ava {
+  border-radius: 50%;
+  color: var(--on-solid);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  object-fit: cover;
+}

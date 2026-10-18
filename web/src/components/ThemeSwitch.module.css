@@ -1,0 +1,62 @@
+.sw {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--hover);
+  border: 1px solid var(--border);
+  flex: none;
+  transition: background 0.2s;
+  view-transition-name: theme-switch;
+}
+
+:global(:root[data-switching]) .sw {
+  transition: background 0.2s !important;
+}
+
+:global(:root[data-switching]) .knob {
+  transition: transform 0.2s ease !important;
+}
+
+.sw:hover {
+  border-color: var(--border-strong);
+}
+
+.sw.on {
+  background: var(--accent-soft);
+}
+
+.knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--knob);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.on .knob {
+  transform: translateX(24px);
+}
+
+.sun {
+  color: #e8890c;
+}
+
+.moon {
+  color: #8ea4ff;
+}
+
+@media (max-width: 640px) {
+  .sw::before {
+    content: "";
+    position: absolute;
+    inset: -6px -2px;
+  }
+}

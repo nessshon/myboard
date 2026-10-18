@@ -1,0 +1,12 @@
+.badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-solid);
+  font-weight: 700;
+}
+
+/* The letter is centred by its capital's height: centred by the line box it sits about 5% low.
+   text-box trims a block, not a flex container, hence the own element; engines without text-box
+   fall back to line-height 1. */

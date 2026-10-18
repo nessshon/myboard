@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+web/dist/*
+!web/dist/.gitkeep
+/myboard
+/myboard.exe
+*.test
+coverage/
+
+# PocketBase runtime data (database, uploads, backups)
+myboard_data/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local working notes: plans, specs, reviews
+docs/
