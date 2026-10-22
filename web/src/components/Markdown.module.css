@@ -108,3 +108,8 @@
   border-top: 1px solid var(--border);
   margin: 14px 0;
 }
+
+.mention {
+  color: var(--accent-ink);
+  font-weight: 500;
+}

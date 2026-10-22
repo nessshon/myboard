@@ -30,6 +30,7 @@ Each collection is at `$MB/api/collections/<name>/records`.
 **comments** — the discussion under a task; read and write for members of the task's project and admins.
 - `id`, `task` (task id, fixed), `body` (Markdown, 1–5000, not blank), `author` (set by the server, fixed), `created`, `updated`.
 - Only the author edits a comment; the author or an admin deletes it. Deleting a task deletes its comments.
+- To mention someone who sees the task (a project member or an admin), write `[@Name](user:USER_ID)`: they get notified, and the site shows their current name.
 
 **users** — read for anyone signed in; managed in the web app.
 - `id`, `name`, `username` (Telegram), `role` (`admin` or `member`), `deleted` (bool).

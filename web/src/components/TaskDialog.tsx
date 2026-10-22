@@ -378,6 +378,7 @@ function TaskBody({
           <Discussion
             taskId={task.id}
             people={people}
+            members={members}
             comments={comments}
             setComments={setComments}
           />

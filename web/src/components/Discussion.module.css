@@ -90,3 +90,26 @@ textarea.input {
     display: none;
   }
 }
+
+.people {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  width: min(280px, 100%);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  z-index: 30;
+}
+
+.person {
+  cursor: pointer;
+}
+
+.person[aria-selected="true"] {
+  background: var(--hover);
+}

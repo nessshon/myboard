@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"regexp"
 	"slices"
 
 	"github.com/pocketbase/dbx"
@@ -83,13 +84,21 @@ func (b *Bot) commented(e *core.RecordRequestEvent) {
 	for _, c := range thread {
 		people = append(people, c.GetString("author"))
 	}
+	body := mention.ReplaceAllStringFunc(comment.GetString("body"), func(link string) string {
+		id := mention.FindStringSubmatch(link)[1]
+		people = append(people, id)
+		if user, err := b.app.FindRecordById("users", id); err == nil {
+			return "@" + userName(user)
+		}
+		return link
+	})
 	by := name(e) // no "(API)": a comment is signed by its person, as it is shown on the site
 	for i, id := range people {
 		if id == authID(e) || slices.Contains(people[:i], id) {
 			continue
 		}
 		if user := b.recipient(id, kindComment, project); user != nil {
-			b.enqueue(user, commentMessage(lang(user), b.publicURL, task, project, by, comment.GetString("body")))
+			b.enqueue(user, commentMessage(lang(user), b.publicURL, task, project, by, body))
 		}
 	}
 }
@@ -161,14 +170,22 @@ func actor(e *core.RecordRequestEvent) string {
 	return by
 }
 
+// The web app turns a picked "@Name" into this link (web/src/components/Markdown.tsx); the id decides,
+// the link text may be stale or made up.
+var mention = regexp.MustCompile(`\[@[^\]\n]*\]\(user:([a-z0-9]{15})\)`)
+
 func name(e *core.RecordRequestEvent) string {
 	if e.Auth == nil {
 		return ""
 	}
-	if n := e.Auth.GetString("name"); n != "" {
+	return userName(e.Auth)
+}
+
+func userName(user *core.Record) string {
+	if n := user.GetString("name"); n != "" {
 		return n
 	}
-	return e.Auth.GetString("username")
+	return user.GetString("username")
 }
 
 func lang(user *core.Record) string {

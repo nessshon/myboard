@@ -191,7 +191,10 @@ func TestCommentNotifications(t *testing.T) {
 	if err := app.Save(erin); err != nil {
 		t.Fatal(err)
 	}
-	p := testutil.Project(t, app, "CMT", alice, bob, carol, dave, erin)
+	frank := testutil.User(t, app, "310000006", "member")
+	outsider := testutil.User(t, app, "310000007", "member")
+	admin := testutil.User(t, app, "310000009", "admin")
+	p := testutil.Project(t, app, "CMT", alice, bob, carol, dave, erin, frank)
 	aliceTok, carolTok, daveTok := testutil.Token(t, alice), testutil.Token(t, carol), testutil.Token(t, dave)
 
 	_, task := testutil.Do(t, h, aliceTok, http.MethodPost, "/api/collections/tasks/records",
@@ -214,10 +217,20 @@ func TestCommentNotifications(t *testing.T) {
 	}
 	fake.waitFor(t, "310000002", 2)
 
-	comment(carolTok, "Yes")
+	link := func(id, text string) string { return "[@" + text + "](user:" + id + ")" }
+	comment(carolTok, "Yes, "+link(outsider.Id, "Outsider")+" "+link(erin.Id, "Erin")+" "+link(dave.Id, "Dave")+" "+link(frank.Id, "Admin")+" "+link(admin.Id, "Boss"))
 	fake.waitFor(t, "310000004", 1)
 	fake.waitFor(t, "310000001", 2)
 	fake.waitFor(t, "310000002", 3)
+	franksFirst := fake.waitFor(t, "310000006", 1)[0]
+	if want := "Yes, @user 310000007 @user 310000005 @user 310000004 @user 310000006 @user 310000009"; !strings.Contains(franksFirst, want) {
+		t.Fatalf("mentions are not shown by current names, want %q:\n%s", want, franksFirst)
+	}
+	fake.waitFor(t, "310000009", 1)
+	// One queue in order: the admin, mentioned last, got it, so the outsider was already passed over.
+	if n := len(fake.texts("310000007")); n != 0 {
+		t.Fatalf("an outsider was mentioned and got %d messages", n)
+	}
 	if n := len(fake.texts("310000003")); n != 0 {
 		t.Fatalf("carol got %d messages about her own comment", n)
 	}
