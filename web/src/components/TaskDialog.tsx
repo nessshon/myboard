@@ -284,6 +284,7 @@ function TaskBody({
               <MenuCheck
                 key={m.id}
                 checked={v.assignees.includes(m.id)}
+                disabled={!v.assignees.includes(m.id) && v.assignees.length >= LIMITS.assignees}
                 onClick={() => assign(m.id)}
                 icon={<Avatar name={personName(m)} src={m.avatar_url} size={18} />}
               >

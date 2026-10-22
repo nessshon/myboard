@@ -1,4 +1,4 @@
-// Text limits; the same numbers are set on the fields in internal/migrations.
+// Field limits; the same numbers are set on the fields in internal/migrations.
 export const LIMITS = {
   projectName: 60,
   projectDescription: 500,
@@ -9,4 +9,5 @@ export const LIMITS = {
   labelName: 24,
   tokenName: 40,
   comment: 5000,
+  assignees: 10,
 } as const;

@@ -104,18 +104,20 @@ export function MenuItem({ icon, onClick, danger, children }: ItemProps) {
 
 type CheckProps = {
   checked: boolean;
+  disabled?: boolean;
   onClick: () => void;
   icon?: ReactNode;
   count?: number;
   children: ReactNode;
 };
 
-export function MenuCheck({ checked, onClick, icon, count, children }: CheckProps) {
+export function MenuCheck({ checked, disabled, onClick, icon, count, children }: CheckProps) {
   return (
     <button
       type="button"
       role="menuitemcheckbox"
       aria-checked={checked}
+      disabled={disabled}
       className={s.item}
       onClick={onClick}
     >

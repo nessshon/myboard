@@ -50,6 +50,11 @@
   color: var(--text);
 }
 
+.item:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .item svg {
   color: var(--muted);
 }
