@@ -186,12 +186,18 @@ func TestCommentNotifications(t *testing.T) {
 	bob := testutil.User(t, app, "310000002", "member")
 	carol := testutil.User(t, app, "310000003", "member")
 	dave := testutil.User(t, app, "310000004", "member")
-	p := testutil.Project(t, app, "CMT", alice, bob, carol, dave)
+	erin := testutil.User(t, app, "310000005", "member")
+	erin.Set("notify_off", []string{kindComment})
+	if err := app.Save(erin); err != nil {
+		t.Fatal(err)
+	}
+	p := testutil.Project(t, app, "CMT", alice, bob, carol, dave, erin)
 	aliceTok, carolTok, daveTok := testutil.Token(t, alice), testutil.Token(t, carol), testutil.Token(t, dave)
 
 	_, task := testutil.Do(t, h, aliceTok, http.MethodPost, "/api/collections/tasks/records",
-		`{"project":"`+p.Id+`","title":"Login","assignees":["`+bob.Id+`"]}`)
+		`{"project":"`+p.Id+`","title":"Login","assignees":["`+bob.Id+`","`+erin.Id+`"]}`)
 	fake.waitFor(t, "310000002", 1)
+	fake.waitFor(t, "310000005", 1)
 	comment := func(tok, body string) {
 		if status, got := testutil.Do(t, h, tok, http.MethodPost, "/api/collections/comments/records",
 			`{"task":"`+task["id"].(string)+`","body":"`+body+`"}`); status != 200 {
@@ -217,6 +223,9 @@ func TestCommentNotifications(t *testing.T) {
 	}
 	if n := len(fake.texts("310000004")); n != 1 {
 		t.Fatalf("dave got %d messages, want 1 (his own comment is not sent)", n)
+	}
+	if n := len(fake.texts("310000005")); n != 1 {
+		t.Fatalf("erin turned comments off but got %d messages, want only the assignment", n)
 	}
 }
 
