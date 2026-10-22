@@ -18,6 +18,7 @@ import { Counter } from "./Counter";
 import { Dialog } from "./Dialog";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
+import { Menu, MenuCheck } from "./Menu";
 import { PROJECT_COLORS } from "./ProjectBadge";
 import { ConfirmDialog } from "./ProjectDialogs";
 import { Select } from "./Select";
@@ -25,7 +26,7 @@ import s from "./TaskDialog.module.css";
 
 export type TaskFields = Pick<
   Task,
-  "title" | "description" | "status" | "priority" | "assignee" | "due" | "labels"
+  "title" | "description" | "status" | "priority" | "assignees" | "due" | "labels"
 >;
 
 const blank: TaskFields = {
@@ -33,7 +34,7 @@ const blank: TaskFields = {
   description: "",
   status: "todo",
   priority: "normal",
-  assignee: "",
+  assignees: [],
   due: "",
   labels: [],
 };
@@ -120,10 +121,17 @@ function TaskBody({
     setEditing(false);
   }
 
-  const choices = members.some((m) => m.id === v.assignee)
-    ? members
-    : [...members, ...people.filter((p) => p.id === v.assignee)];
-  const who = people.find((p) => p.id === v.assignee);
+  const choices = [
+    ...members,
+    ...people.filter((p) => v.assignees.includes(p.id) && !members.some((m) => m.id === p.id)),
+  ];
+  const who = v.assignees.flatMap((id) => people.filter((p) => p.id === id));
+  const assign = (id: string) =>
+    set({
+      assignees: v.assignees.includes(id)
+        ? v.assignees.filter((x) => x !== id)
+        : [...v.assignees, id],
+    });
   const author = task && people.find((p) => p.id === task.author);
   const day = (timestamp: string) => formatDate(timestamp, lang);
   const chosen = labels.filter((l) => v.labels.includes(l.id));
@@ -239,30 +247,43 @@ function TaskBody({
               ))}
             </Select>
           </div>
-          <label className={s.k} htmlFor="task-assignee">
-            {t("task.assignee")}
-          </label>
-          <div className={s.pick}>
-            <span className={s.ico}>
-              {who ? (
-                <Avatar name={personName(who)} src={who.avatar_url} size={18} />
-              ) : (
-                <Icon name="userCheck" size={16} />
-              )}
-            </span>
-            <Select
-              id="task-assignee"
-              value={v.assignee}
-              onChange={(e) => set({ assignee: e.target.value })}
-            >
-              <option value="">{t("task.unassigned")}</option>
-              {choices.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {personName(m, t("users.gone"))}
-                </option>
-              ))}
-            </Select>
-          </div>
+          <span className={`${s.k} ${s.top}`}>{t("task.assignees")}</span>
+          <Menu
+            label={t("task.assignees")}
+            triggerClass={s.lfield}
+            trigger={
+              <>
+                <span className={s.ico}>
+                  <Icon name="userCheck" size={16} />
+                </span>
+                {who.length === 0 ? (
+                  <span className={s.none}>{t("task.unassigned")}</span>
+                ) : (
+                  <span className={s.people}>
+                    <span className={s.faces}>
+                      {who.slice(0, 3).map((p) => (
+                        <Avatar key={p.id} name={personName(p)} src={p.avatar_url} size={18} />
+                      ))}
+                    </span>
+                    <span className="ellipsis">
+                      {who.map((p) => personName(p, t("users.gone"))).join(", ")}
+                    </span>
+                  </span>
+                )}
+              </>
+            }
+          >
+            {choices.map((m) => (
+              <MenuCheck
+                key={m.id}
+                checked={v.assignees.includes(m.id)}
+                onClick={() => assign(m.id)}
+                icon={<Avatar name={personName(m)} src={m.avatar_url} size={18} />}
+              >
+                {personName(m, t("users.gone"))}
+              </MenuCheck>
+            ))}
+          </Menu>
           <label className={s.k} htmlFor="task-due">
             {t("task.due")}
           </label>

@@ -2,6 +2,7 @@ package tasks_test
 
 import (
 	"net/http"
+	"net/url"
 	"sort"
 	"sync"
 	"testing"
@@ -89,7 +90,7 @@ func TestTaskRules(t *testing.T) {
 
 	id := first["id"].(string)
 	bad := []struct{ name, body string }{
-		{"assignee outside the project", `{"assignee":"` + stranger.Id + `"}`},
+		{"assignee outside the project", `{"assignees":["` + alice.Id + `","` + stranger.Id + `"]}`},
 		{"label from another project", `{"labels":["` + foreignLabel.Id + `"]}`},
 		{"moving to another project", `{"project":"` + other.Id + `"}`},
 		{"changing the number", `{"number":5}`},
@@ -103,7 +104,7 @@ func TestTaskRules(t *testing.T) {
 	}
 
 	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+id,
-		`{"assignee":"`+alice.Id+`","status":"done","due":"2026-10-20"}`); status != 200 {
+		`{"assignees":["`+alice.Id+`"],"status":"done","due":"2026-10-20"}`); status != 200 {
 		t.Fatalf("valid update: %d %v", status, body)
 	}
 }
@@ -126,7 +127,7 @@ func TestTaskOfAnAssigneeWhoLeft(t *testing.T) {
 	alice := testutil.User(t, app, "300000011", "member")
 	bob := testutil.User(t, app, "300000012", "member")
 	p := testutil.Project(t, app, "LFT", alice, bob)
-	task := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "t", "assignee": bob.Id})
+	task := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "t", "assignees": []string{bob.Id}})
 	p, err := app.FindRecordById("projects", p.Id)
 	if err != nil {
 		t.Fatal(err)
@@ -141,12 +142,24 @@ func TestTaskOfAnAssigneeWhoLeft(t *testing.T) {
 	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"title":"renamed"}`); status != 200 {
 		t.Fatalf("edit title: %d %v", status, body)
 	}
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"assignee":"`+bob.Id+`","title":"again"}`); status != 200 {
+	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"assignees":["`+bob.Id+`"],"title":"again"}`); status != 200 {
 		t.Fatalf("resending the same assignee: %d %v", status, body)
 	}
+	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"assignees":["`+bob.Id+`","`+alice.Id+`"]}`); status != 200 {
+		t.Fatalf("adding a member next to one who left: %d %v", status, body)
+	}
 	other := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "u"})
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"assignee":"`+bob.Id+`"}`); status != 400 {
+	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"assignees":["`+bob.Id+`"]}`); status != 400 {
 		t.Fatalf("assigning a non-member: %d, want 400 (%v)", status, body)
+	}
+	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"assignees+":"`+bob.Id+`"}`); status != 400 {
+		t.Fatalf("adding a non-member with assignees+: %d, want 400 (%v)", status, body)
+	}
+	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"assignees+":"`+alice.Id+`"}`); status != 200 {
+		t.Fatalf("adding a member with assignees+: %d %v", status, body)
+	}
+	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"assignees-":"`+alice.Id+`"}`); status != 200 || len(body["assignees"].([]any)) != 1 {
+		t.Fatalf("removing one assignee with assignees-: %d %v", status, body)
 	}
 }
 
@@ -180,5 +193,24 @@ func TestEditedFollowsContentOnly(t *testing.T) {
 		if _, body := testutil.Do(t, h, tok, http.MethodPatch, url, `{"position":7,"edited":"2020-01-01 00:00:00.000Z"}`); body["edited"] != edited {
 			t.Fatalf("%s reorder with a forged date: edited %q, want %q", c.collection, body["edited"], edited)
 		}
+	}
+}
+
+func TestFindTasksByAssignee(t *testing.T) {
+	app := testutil.NewApp(t)
+	defer app.Cleanup()
+
+	alice := testutil.User(t, app, "300000021", "member")
+	bob := testutil.User(t, app, "300000022", "member")
+	p := testutil.Project(t, app, "FND", alice, bob)
+	testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "both", "assignees": []string{alice.Id, bob.Id}})
+	testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "alice", "assignees": []string{alice.Id}})
+	h := testutil.Handler(t, app)
+
+	filter := url.QueryEscape(`assignees.id ?= "` + bob.Id + `"`)
+	status, body := testutil.Do(t, h, testutil.Token(t, bob), http.MethodGet, "/api/collections/tasks/records?filter="+filter, "")
+	items, _ := body["items"].([]any)
+	if status != 200 || len(items) != 1 || items[0].(map[string]any)["title"] != "both" {
+		t.Fatalf("bob's tasks: %d %v", status, body)
 	}
 }

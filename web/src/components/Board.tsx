@@ -76,7 +76,7 @@ function CardBody({
 }: CardData & { task: Task; handle?: ReactNode; activator?: Activator }) {
   const t = useT();
   const lang = useLang();
-  const who = people.find((p) => p.id === task.assignee);
+  const who = task.assignees.flatMap((id) => people.filter((p) => p.id === id));
   const tags = labels.filter((l) => task.labels.includes(l.id));
   const href = `/p/${projectKey.toLowerCase()}/${task.number}`;
   return (
@@ -90,16 +90,19 @@ function CardBody({
         <span className={s.key}>
           {projectKey}-{task.number}
         </span>
-        {who && (
+        {who.length > 0 && (
           <a
             className={s.who}
             href={href}
-            title={personName(who, t("users.gone"))}
+            title={who.map((p) => personName(p, t("users.gone"))).join(", ")}
             tabIndex={-1}
             aria-hidden="true"
             draggable={false}
           >
-            <Avatar name={personName(who)} src={who.avatar_url} size={20} />
+            {who.slice(0, 3).map((p) => (
+              <Avatar key={p.id} name={personName(p)} src={p.avatar_url} size={20} />
+            ))}
+            {who.length > 3 && <span className={s.extra}>+{who.length - 3}</span>}
           </a>
         )}
         {handle}

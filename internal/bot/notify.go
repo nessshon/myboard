@@ -19,17 +19,17 @@ func (b *Bot) bindEvents() {
 		if err := e.Next(); err != nil {
 			return err
 		}
-		b.taskChanged(e, "", e.Record.GetString("status"))
+		b.taskChanged(e, nil, e.Record.GetString("status"))
 		return nil
 	})
 
 	b.app.OnRecordUpdateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
 		before := e.Record.Original()
-		assignee, status := before.GetString("assignee"), before.GetString("status")
+		assignees, status := before.GetStringSlice("assignees"), before.GetString("status")
 		if err := e.Next(); err != nil {
 			return err
 		}
-		b.taskChanged(e, assignee, status)
+		b.taskChanged(e, assignees, status)
 		return nil
 	})
 
@@ -52,7 +52,7 @@ func (b *Bot) bindEvents() {
 	})
 }
 
-func (b *Bot) taskChanged(e *core.RecordRequestEvent, oldAssignee, oldStatus string) {
+func (b *Bot) taskChanged(e *core.RecordRequestEvent, oldAssignees []string, oldStatus string) {
 	task := e.Record
 	project, err := b.app.FindRecordById("projects", task.GetString("project"))
 	if err != nil {
@@ -61,20 +61,24 @@ func (b *Bot) taskChanged(e *core.RecordRequestEvent, oldAssignee, oldStatus str
 	}
 	by := actor(e)
 
-	assigned := task.GetString("assignee")
-	if assigned == oldAssignee || assigned == authID(e) {
-		assigned = ""
-	}
-	if user := b.recipient(assigned, kindAssigned, project); user != nil {
-		b.enqueue(user, assignedMessage(lang(user), b.publicURL, task, project, by))
+	var assigned []string
+	for _, id := range task.GetStringSlice("assignees") {
+		if slices.Contains(oldAssignees, id) || id == authID(e) {
+			continue
+		}
+		assigned = append(assigned, id)
+		if user := b.recipient(id, kindAssigned, project); user != nil {
+			b.enqueue(user, assignedMessage(lang(user), b.publicURL, task, project, by))
+		}
 	}
 
 	status := task.GetString("status")
 	if status == oldStatus {
 		return
 	}
-	for _, id := range slices.Compact([]string{task.GetString("author"), task.GetString("assignee")}) {
-		if id == authID(e) || id == assigned {
+	people := append([]string{task.GetString("author")}, task.GetStringSlice("assignees")...)
+	for i, id := range people {
+		if id == authID(e) || slices.Contains(assigned, id) || slices.Contains(people[:i], id) {
 			continue
 		}
 		if user := b.recipient(id, kindStatus, project); user != nil {

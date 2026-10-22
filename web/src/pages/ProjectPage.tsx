@@ -37,8 +37,13 @@ const byPosition = (a: Row, b: Row) => a.position - b.position;
 type TaskFilter = { assignee: string[]; author: string[]; labels: string[] };
 const noFilter: TaskFilter = { assignee: [], author: [], labels: [] };
 
+const peopleOf = (task: Task, field: "assignee" | "author") =>
+  field === "assignee" ? task.assignees : [task.author];
+
 const fits = (task: Task, only: TaskFilter, skip?: keyof TaskFilter) =>
-  (skip === "assignee" || !only.assignee.length || only.assignee.includes(task.assignee)) &&
+  (skip === "assignee" ||
+    !only.assignee.length ||
+    only.assignee.some((id) => (id ? task.assignees.includes(id) : !task.assignees.length))) &&
   (skip === "author" || !only.author.length || only.author.includes(task.author)) &&
   (skip === "labels" || !only.labels.length || task.labels.some((l) => only.labels.includes(l)));
 
@@ -107,7 +112,7 @@ export function ProjectPage({
   const only = useMemo(() => {
     if (!labels || !tasks) return picked;
     const known = (field: "assignee" | "author") =>
-      new Set([...project.members, ...tasks.map((x) => x[field])]);
+      new Set([...project.members, ...tasks.flatMap((x) => peopleOf(x, field))]);
     const assignees = known("assignee");
     const authors = known("author");
     return {
@@ -177,14 +182,17 @@ export function ProjectPage({
   const countOf = (skip: keyof TaskFilter, test: (x: Task) => boolean) =>
     (sortedTasks ?? []).filter((x) => fits(x, only, skip) && test(x)).length;
   const personOptions = (field: "assignee" | "author"): FilterOption[] => {
-    const ids = new Set([...project.members, ...(sortedTasks ?? []).map((x) => x[field])]);
+    const ids = new Set([
+      ...project.members,
+      ...(sortedTasks ?? []).flatMap((x) => peopleOf(x, field)),
+    ]);
     const pool = people.filter((p) => ids.has(p.id));
     return [...pool.filter((p) => p.id === me.id), ...pool.filter((p) => p.id !== me.id)].map(
       (p) => ({
         id: p.id,
         name: personName(p, t("users.gone")),
         icon: <Avatar name={personName(p)} src={p.avatar_url} size={18} />,
-        count: countOf(field, (x) => x[field] === p.id),
+        count: countOf(field, (x) => peopleOf(x, field).includes(p.id)),
       }),
     );
   };
@@ -229,7 +237,7 @@ export function ProjectPage({
         {sortedTasks && (sortedTasks.length > 0 || filtering || !!sortedLabels?.length) && (
           <div className={s.filters}>
             <Filter
-              title={t("task.assignee")}
+              title={t("task.assignees")}
               chosen={only.assignee}
               onChange={(assignee) => setOnly({ ...only, assignee })}
               options={[
@@ -242,7 +250,7 @@ export function ProjectPage({
                       <Icon name="userRound" size={12} strokeWidth={2.4} />
                     </span>
                   ),
-                  count: countOf("assignee", (x) => !x.assignee),
+                  count: countOf("assignee", (x) => !x.assignees.length),
                 },
               ]}
             />

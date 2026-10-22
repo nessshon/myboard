@@ -78,7 +78,7 @@ func TestOwnSettingsFiltersAreRefused(t *testing.T) {
 		{"filter by notifications", "/api/collections/users/records?filter=" + url.QueryEscape(`notify_off ~ "status"`), 400},
 		{"filter by language", "/api/collections/users/records?filter=" + url.QueryEscape(`lang = "en"`), 400},
 		{"sort by project order", "/api/collections/users/records?sort=project_order", 400},
-		{"filter through a relation", "/api/collections/tasks/records?filter=" + url.QueryEscape(`assignee.lang = "en"`), 400},
+		{"filter through a relation", "/api/collections/tasks/records?filter=" + url.QueryEscape(`assignees.lang = "en"`), 400},
 		{"the word in a value", "/api/collections/users/records?filter=" + url.QueryEscape(`name ~ "lang"`), 200},
 	}
 	for _, c := range cases {
@@ -137,7 +137,7 @@ func TestBatchOnlyReorders(t *testing.T) {
 	}{
 		{"reorder", "PATCH", records + "/" + task.Id, `{"position":5}`, 200},
 		{"status change", "PATCH", records + "/" + task.Id, `{"status":"done"}`, 400},
-		{"position with more", "PATCH", records + "/" + task.Id, `{"position":6,"assignee":""}`, 400},
+		{"position with more", "PATCH", records + "/" + task.Id, `{"position":6,"assignees":[]}`, 400},
 		{"query string", "PATCH", records + "/" + task.Id + "?expand=project", `{"position":7}`, 400},
 		{"create", "POST", records, `{"project":"` + p.Id + `","title":"x"}`, 400},
 		{"delete", "DELETE", records + "/" + task.Id, `{}`, 400},

@@ -98,7 +98,7 @@
   "task.deleteTitle": "Удалить задачу {key}?",
   "task.status": "Статус",
   "task.priority": "Приоритет",
-  "task.assignee": "Исполнитель",
+  "task.assignees": "Исполнители",
   "task.unassigned": "Не назначен",
   "task.noLabels": "Нет меток",
   "task.labels": "Метки",

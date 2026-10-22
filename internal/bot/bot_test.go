@@ -89,7 +89,7 @@ func TestNotifications(t *testing.T) {
 	aliceTok, bobTok := testutil.Token(t, alice), testutil.Token(t, bob)
 
 	status, body := testutil.Do(t, h, aliceTok, http.MethodPost, "/api/collections/tasks/records",
-		`{"project":"`+p.Id+`","title":"Fix <login>","assignee":"`+bob.Id+`","due":"2026-10-20"}`)
+		`{"project":"`+p.Id+`","title":"Fix <login>","assignees":["`+bob.Id+`"],"due":"2026-10-20"}`)
 	if status != 200 {
 		t.Fatalf("create: %d %v", status, body)
 	}
@@ -110,8 +110,8 @@ func TestNotifications(t *testing.T) {
 		t.Fatalf("status message:\n%s", got[0])
 	}
 
-	testutil.Do(t, h, aliceTok, http.MethodPatch, task, `{"assignee":"`+dave.Id+`"}`)
-	testutil.Do(t, h, aliceTok, http.MethodPatch, task, `{"assignee":"`+erin.Id+`"}`)
+	testutil.Do(t, h, aliceTok, http.MethodPatch, task, `{"assignees":["`+dave.Id+`"]}`)
+	testutil.Do(t, h, aliceTok, http.MethodPatch, task, `{"assignees":["`+erin.Id+`"]}`)
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		fresh, err := app.FindRecordById("users", erin.Id)
@@ -135,6 +135,16 @@ func TestNotifications(t *testing.T) {
 		t.Fatalf("added message:\n%s", got[0])
 	}
 
+	_, shared := testutil.Do(t, h, aliceTok, http.MethodPost, "/api/collections/tasks/records",
+		`{"project":"`+p.Id+`","title":"Pair","assignees":["`+bob.Id+`","`+carol.Id+`"]}`)
+	testutil.Do(t, h, aliceTok, http.MethodPatch, "/api/collections/tasks/records/"+shared["id"].(string), `{"status":"in_progress"}`)
+	for _, chat := range []string{"300000002", "300000003"} {
+		got := fake.waitFor(t, chat, 3)
+		if !strings.Contains(got[1], "Вам назначена задача") || !strings.Contains(got[2], "Задача взята в работу") {
+			t.Fatalf("each assignee hears both:\n%s", strings.Join(got, "\n---\n"))
+		}
+	}
+
 	alice.Set("lang", "en")
 	if err := app.Save(alice); err != nil {
 		t.Fatal(err)
@@ -154,7 +164,7 @@ func TestNotifications(t *testing.T) {
 	if n := len(fake.texts("300000004")); n != 0 {
 		t.Fatalf("dave turned assignments off but got %d messages", n)
 	}
-	if n := len(fake.texts("300000002")); n != 1 {
-		t.Fatalf("bob got %d messages, want 1 (the status he set himself is not sent)", n)
+	if n := len(fake.texts("300000002")); n != 3 {
+		t.Fatalf("bob got %d messages, want 3 (the status he set himself is not sent)", n)
 	}
 }

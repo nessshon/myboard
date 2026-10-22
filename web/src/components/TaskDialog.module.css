@@ -347,6 +347,20 @@ textarea.descIn {
   color: var(--muted);
 }
 
+.people {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.faces {
+  flex: none;
+  display: flex;
+  gap: 2px;
+}
+
 input.search {
   flex: none;
 }

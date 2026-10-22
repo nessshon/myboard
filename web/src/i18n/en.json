@@ -96,7 +96,7 @@
   "task.deleteTitle": "Delete task {key}?",
   "task.status": "Status",
   "task.priority": "Priority",
-  "task.assignee": "Assignee",
+  "task.assignees": "Assignees",
   "task.unassigned": "Unassigned",
   "task.noLabels": "No labels",
   "task.labels": "Labels",

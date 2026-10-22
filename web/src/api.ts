@@ -52,7 +52,7 @@ export interface Task extends RecordModel {
   status: Status;
   priority: Priority;
   labels: string[];
-  assignee: string;
+  assignees: string[];
   due: string;
   position: number;
   author: string;
@@ -199,7 +199,7 @@ export const myNotes = (userId: string) =>
 export const myOpenCount = async (userId: string) =>
   (
     await pb.collection("tasks").getList(1, 1, {
-      filter: pb.filter(`assignee = {:id} && ${OPEN}`, {
+      filter: pb.filter(`assignees.id ?= {:id} && ${OPEN}`, {
         id: userId,
       }),
       fields: "id",
@@ -210,7 +210,7 @@ const OPEN_ORDER: Status[] = ["in_progress", "todo", "backlog"];
 
 export const myOpenTasks = async (userId: string) => {
   const rows = await pb.collection("tasks").getFullList<Task & { expand?: { project?: Project } }>({
-    filter: pb.filter(`assignee = {:id} && ${OPEN}`, {
+    filter: pb.filter(`assignees.id ?= {:id} && ${OPEN}`, {
       id: userId,
     }),
     sort: "position",

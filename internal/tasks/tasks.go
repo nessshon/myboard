@@ -15,7 +15,7 @@ import (
 )
 
 var editedFields = map[string][]string{
-	"tasks": {"title", "description", "status", "priority", "labels", "assignee", "due"},
+	"tasks": {"title", "description", "status", "priority", "labels", "assignees", "due"},
 	"notes": {"title", "body", "shared"},
 }
 
@@ -113,10 +113,15 @@ func validateTask(app core.App, task *core.Record) error {
 		return validation.Errors{"project": validation.NewError("validation_invalid_project", "Unknown project.")}
 	}
 
-	// Only a new or changed value is checked: a task stays editable after its assignee leaves the project.
-	if assignee := task.GetString("assignee"); assignee != "" && (task.IsNew() || assignee != original.GetString("assignee")) &&
-		!slices.Contains(project.GetStringSlice("members"), assignee) {
-		return validation.Errors{"assignee": validation.NewError("assignee_not_member", "The assignee must be a member of the project.")}
+	// Only newly added people are checked: a task stays editable after one of its assignees leaves the project.
+	var kept []string
+	if !task.IsNew() {
+		kept = original.GetStringSlice("assignees")
+	}
+	for _, id := range task.GetStringSlice("assignees") {
+		if !slices.Contains(kept, id) && !slices.Contains(project.GetStringSlice("members"), id) {
+			return validation.Errors{"assignees": validation.NewError("assignee_not_member", "Every assignee must be a member of the project.")}
+		}
 	}
 
 	if labels := task.GetStringSlice("labels"); len(labels) > 0 && (task.IsNew() || !slices.Equal(labels, original.GetStringSlice("labels"))) {

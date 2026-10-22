@@ -152,7 +152,23 @@
   position: relative;
   z-index: 1;
   display: inline-flex;
+  align-items: center;
   -webkit-user-drag: none;
+}
+
+.who > * + * {
+  margin-left: -4px;
+}
+
+.who > :not(.extra) {
+  box-shadow: 0 0 0 2px var(--surface);
+  border-radius: 50%;
+}
+
+.extra {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .open {

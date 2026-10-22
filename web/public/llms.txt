@@ -18,7 +18,7 @@ Each collection is at `$MB/api/collections/<name>/records`.
 - `id`, `name` (1–60 chars), `key` (2–10 chars, `^[A-Z][A-Z0-9]+$`, prefix of task numbers, e.g. `MYB`), `description` (≤500), `members` (user ids), `archived` (bool), `color` (`#rrggbb`, lowercase, or empty).
 
 **tasks** — read and write for project members and admins.
-- `id`, `project` (project id; fixed after creation), `number` (set by the server, unique per project; a task is called `KEY-number`, e.g. `MYB-17`), `title` (1–200 chars), `description` (Markdown, ≤20000), `status` (`backlog`, `todo`, `in_progress`, `done`, `cancelled`), `priority` (`normal`, `high`, `urgent`), `assignee` (user id or empty; must be a member of the project), `labels` (label ids of the same project), `due` (`YYYY-MM-DD` or empty), `position` (number; lower is higher in its column), `author` (set by the server), `edited` (set by the server when a person changes the content, not the order; empty until then).
+- `id`, `project` (project id; fixed after creation), `number` (set by the server, unique per project; a task is called `KEY-number`, e.g. `MYB-17`), `title` (1–200 chars), `description` (Markdown, ≤20000), `status` (`backlog`, `todo`, `in_progress`, `done`, `cancelled`), `priority` (`normal`, `high`, `urgent`), `assignees` (up to 10 user ids; each one added must be a member of the project; `"assignees+":"ID"` adds one, `"assignees-":"ID"` removes one), `labels` (label ids of the same project), `due` (`YYYY-MM-DD` or empty), `position` (number; lower is higher in its column), `author` (set by the server), `edited` (set by the server when a person changes the content, not the order; empty until then).
 - A new task goes to the top of its column. To move a task, PATCH `status` and, if order matters, `position`.
 
 **labels** — per project; members read and write.
@@ -33,9 +33,9 @@ Each collection is at `$MB/api/collections/<name>/records`.
 ## Queries
 
 List requests take these query parameters (URL-encode them, e.g. with `curl -G --data-urlencode`):
-- `filter` — e.g. `project.key = "MYB" && status != "done"`. Operators: `=`, `!=`, `>`, `<`, `~` (contains), `?=` (a list field such as `labels` has the value, e.g. `labels ?= "LABEL_ID"`), `&&`, `||`, parentheses. Use literal ids in filters; `@request.auth` is not allowed there.
+- `filter` — e.g. `project.key = "MYB" && status != "done"`. Operators: `=`, `!=`, `>`, `<`, `~` (contains), `?=` (any item of a list matches; for list relations name the id: `labels.id ?= "LABEL_ID"`, `assignees.id ?= "USER_ID"`), `&&`, `||`, parentheses. Use literal ids in filters; `@request.auth` is not allowed there.
 - `sort` — fields, `-` for descending: `sort=status,position` or `sort=-updated`. `status` sorts by its name, alphabetically.
-- `expand` — inline related records: `expand=project,assignee,labels`.
+- `expand` — inline related records: `expand=project,assignees,labels`.
 - `page`, `perPage` (default 30, max 1000).
 
 A list answers `{"page":1,"perPage":30,"totalItems":2,"totalPages":1,"items":[...]}`. Records you may not see are simply absent from lists.
@@ -57,7 +57,7 @@ My open tasks across all projects, with their project:
 ```sh
 ME=$(curl -s "${auth[@]}" "$MB/api/myboard/me" | jq -r .id)
 curl -sG "${auth[@]}" "$MB/api/collections/tasks/records" \
-  --data-urlencode "filter=assignee = \"$ME\" && status != \"done\" && status != \"cancelled\"" \
+  --data-urlencode "filter=assignees.id ?= \"$ME\" && status != \"done\" && status != \"cancelled\"" \
   --data-urlencode 'expand=project' --data-urlencode 'sort=status,position'
 ```
 
@@ -85,7 +85,7 @@ Move a task, assign it, set a due date (send only the fields you change):
 
 ```sh
 curl -s "${auth[@]}" -H 'Content-Type: application/json' -X PATCH "$MB/api/collections/tasks/records/TASK_ID" \
-  -d '{"status":"in_progress","assignee":"USER_ID","due":"2026-10-30"}'
+  -d '{"status":"in_progress","assignees+":"USER_ID","due":"2026-10-30"}'
 ```
 
 People to assign (members of a project are its `members` ids):
