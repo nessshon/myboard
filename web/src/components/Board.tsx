@@ -64,13 +64,19 @@ export function StatusDot({ status }: { status: Status }) {
 
 const isStatus = (id: UniqueIdentifier): id is Status => STATUSES.includes(id as Status);
 
-type CardData = { projectKey: string; labels: Label[]; people: User[] };
+type CardData = {
+  projectKey: string;
+  labels: Label[];
+  people: User[];
+  commentCount: Map<string, number>;
+};
 
 function CardBody({
   task,
   projectKey,
   labels,
   people,
+  commentCount,
   handle,
   activator,
 }: CardData & { task: Task; handle?: ReactNode; activator?: Activator }) {
@@ -110,7 +116,7 @@ function CardBody({
       <a className={`stretch ${s.open}`} href={href} draggable={false} {...activator}>
         {task.title}
       </a>
-      {(tags.length > 0 || task.due) && (
+      {(tags.length > 0 || task.due || commentCount.has(task.id)) && (
         <div className={s.meta}>
           {tags.map((l) => (
             <span key={l.id} className="tag">
@@ -126,6 +132,12 @@ function CardBody({
             >
               <Icon name="calendar" size={12} />
               {formatDue(task.due, lang)}
+            </span>
+          )}
+          {commentCount.has(task.id) && (
+            <span className={s.comments} title={t("comment.title")}>
+              <Icon name="message" size={12} />
+              {commentCount.get(task.id)}
             </span>
           )}
         </div>

@@ -93,9 +93,8 @@ export function ProjectPage({
 }) {
   const t = useT();
   const tasksHead = useId();
-  const { tasks, notes, labels, setTasks, setNotes, setLabels } = useProjectData(project.id, () =>
-    toast(t("common.loadFailed")),
-  );
+  const { tasks, notes, labels, comments, setTasks, setNotes, setLabels, setComments } =
+    useProjectData(project.id, () => toast(t("common.loadFailed")));
   const isPhone = usePhone();
   const [creating, setCreating] = useState(false);
   const [picked, setOnly] = useState(noFilter);
@@ -177,7 +176,12 @@ export function ProjectPage({
   const createLabel = (name: string, color: string) =>
     add("labels", setLabels, { project: project.id, name, color }, actionFailed);
 
-  const card = { projectKey: project.key, labels: sortedLabels ?? [], people };
+  const commentCount = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of comments ?? []) counts.set(c.task, (counts.get(c.task) ?? 0) + 1);
+    return counts;
+  }, [comments]);
+  const card = { projectKey: project.key, labels: sortedLabels ?? [], people, commentCount };
 
   const countOf = (skip: keyof TaskFilter, test: (x: Task) => boolean) =>
     (sortedTasks ?? []).filter((x) => fits(x, only, skip) && test(x)).length;
@@ -308,6 +312,8 @@ export function ProjectPage({
           drop("tasks", setTasks, open, actionFailed);
         }}
         onCreateLabel={createLabel}
+        comments={comments}
+        setComments={setComments}
       />
       <LabelsDialog
         open={editingLabels}

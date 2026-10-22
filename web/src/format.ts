@@ -27,3 +27,12 @@ export function formatDay(timestamp: string, lang: string) {
     year: "numeric",
   });
 }
+
+export function formatMoment(timestamp: string, lang: string) {
+  return new Intl.DateTimeFormat(lang, {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parseDate(timestamp));
+}

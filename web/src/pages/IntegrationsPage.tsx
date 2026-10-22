@@ -22,7 +22,7 @@ import own from "./IntegrationsPage.module.css";
 import { formatDay } from "../format";
 import { copyText } from "../browser";
 
-const KINDS = ["assigned", "status", "added"] as const;
+const KINDS = ["assigned", "status", "comment", "added"] as const;
 
 export function IntegrationsPage() {
   const t = useT();

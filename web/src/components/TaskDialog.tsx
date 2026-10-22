@@ -3,7 +3,9 @@ import {
   PRIORITIES,
   STATUSES,
   isClosed,
+  type Comment,
   type Label,
+  type Setter,
   type Task,
   type User,
   personName,
@@ -16,6 +18,7 @@ import { StatusDot } from "./Board";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
 import { Dialog } from "./Dialog";
+import { Discussion } from "./Discussion";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
 import { Menu, MenuCheck } from "./Menu";
@@ -50,6 +53,8 @@ type Props = {
   onCreate?: (fields: TaskFields) => Promise<void> | void;
   onDelete: () => void;
   onCreateLabel: (name: string, color: string) => Promise<Label | undefined>;
+  comments: Comment[] | null;
+  setComments: Setter<Comment>;
 };
 
 export function TaskDialog({ open, ...props }: Props & { open: boolean }) {
@@ -85,6 +90,8 @@ function TaskBody({
   onCreate,
   onDelete,
   onCreateLabel,
+  comments,
+  setComments,
 }: Props) {
   const t = useT();
   const lang = useLang();
@@ -365,6 +372,16 @@ function TaskBody({
           </div>
         )}
       </aside>
+      {task && comments && (
+        <div className={s.discussion}>
+          <Discussion
+            taskId={task.id}
+            people={people}
+            comments={comments}
+            setComments={setComments}
+          />
+        </div>
+      )}
       {task && (
         <ConfirmDialog
           open={asking}

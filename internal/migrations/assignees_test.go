@@ -17,8 +17,15 @@ func TestAssigneeBecomesList(t *testing.T) {
 	p := testutil.Project(t, app, "ASG", bob)
 	task := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "t", "assignees": []string{bob.Id}})
 
+	items := core.AppMigrations.Items()
+	back := 0
+	for i, m := range items {
+		if m.File == "1792627200_task_assignees.go" {
+			back = len(items) - i
+		}
+	}
 	runner := core.NewMigrationsRunner(app, core.AppMigrations)
-	if _, err := runner.Down(1); err != nil {
+	if _, err := runner.Down(back); err != nil {
 		t.Fatal(err)
 	}
 	old, err := app.FindRecordById("tasks", task.Id)

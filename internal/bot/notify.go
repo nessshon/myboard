@@ -3,6 +3,7 @@ package bot
 import (
 	"slices"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 
 	"github.com/nessshon/myboard/internal/apitoken"
@@ -12,6 +13,7 @@ const (
 	kindAssigned = "assigned"
 	kindStatus   = "status"
 	kindAdded    = "added"
+	kindComment  = "comment"
 )
 
 func (b *Bot) bindEvents() {
@@ -33,6 +35,14 @@ func (b *Bot) bindEvents() {
 		return nil
 	})
 
+	b.app.OnRecordCreateRequest("comments").BindFunc(func(e *core.RecordRequestEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+		b.commented(e)
+		return nil
+	})
+
 	b.app.OnRecordUpdateRequest("projects").BindFunc(func(e *core.RecordRequestEvent) error {
 		members := e.Record.Original().GetStringSlice("members")
 		if err := e.Next(); err != nil {
@@ -50,6 +60,38 @@ func (b *Bot) bindEvents() {
 		}
 		return nil
 	})
+}
+
+func (b *Bot) commented(e *core.RecordRequestEvent) {
+	comment := e.Record
+	task, err := b.app.FindRecordById("tasks", comment.GetString("task"))
+	if err != nil {
+		b.app.Logger().Warn("notify: find task", "comment", comment.Id, "error", err)
+		return
+	}
+	project, err := b.app.FindRecordById("projects", task.GetString("project"))
+	if err != nil {
+		b.app.Logger().Warn("notify: find project", "task", task.Id, "error", err)
+		return
+	}
+	thread, err := b.app.FindAllRecords("comments", dbx.HashExp{"task": task.Id})
+	if err != nil {
+		b.app.Logger().Warn("notify: find comments", "task", task.Id, "error", err)
+		return
+	}
+	people := append([]string{task.GetString("author")}, task.GetStringSlice("assignees")...)
+	for _, c := range thread {
+		people = append(people, c.GetString("author"))
+	}
+	by := name(e) // no "(API)": a comment is signed by its person, as it is shown on the site
+	for i, id := range people {
+		if id == authID(e) || slices.Contains(people[:i], id) {
+			continue
+		}
+		if user := b.recipient(id, kindComment, project); user != nil {
+			b.enqueue(user, commentMessage(lang(user), b.publicURL, task, project, by, comment.GetString("body")))
+		}
+	}
 }
 
 func (b *Bot) taskChanged(e *core.RecordRequestEvent, oldAssignees []string, oldStatus string) {
@@ -112,17 +154,21 @@ func authID(e *core.RecordRequestEvent) string {
 }
 
 func actor(e *core.RecordRequestEvent) string {
+	by := name(e)
+	if by != "" && apitoken.ViaToken(e.RequestEvent) {
+		by += " (API)"
+	}
+	return by
+}
+
+func name(e *core.RecordRequestEvent) string {
 	if e.Auth == nil {
 		return ""
 	}
-	name := e.Auth.GetString("name")
-	if name == "" {
-		name = e.Auth.GetString("username")
+	if n := e.Auth.GetString("name"); n != "" {
+		return n
 	}
-	if apitoken.ViaToken(e.RequestEvent) {
-		name += " (API)"
-	}
-	return name
+	return e.Auth.GetString("username")
 }
 
 func lang(user *core.Record) string {

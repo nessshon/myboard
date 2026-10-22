@@ -1,4 +1,4 @@
-// Text limits; the same numbers are set on the fields in internal/migrations/1760572800_init.go.
+// Text limits; the same numbers are set on the fields in internal/migrations.
 export const LIMITS = {
   projectName: 60,
   projectDescription: 500,
@@ -8,4 +8,5 @@ export const LIMITS = {
   noteBody: 50000,
   labelName: 24,
   tokenName: 40,
+  comment: 5000,
 } as const;

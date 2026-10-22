@@ -67,6 +67,11 @@ export interface Note extends RecordModel {
   shared: boolean;
   edited: string;
 }
+export interface Comment extends RecordModel {
+  task: string;
+  author: string;
+  body: string;
+}
 export interface ApiToken extends RecordModel {
   name: string;
   hint: string;
@@ -268,6 +273,7 @@ export function useProjectData(projectId: string | undefined, failed: () => void
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [labels, setLabels] = useState<Label[] | null>(null);
+  const [comments, setComments] = useState<Comment[] | null>(null);
 
   useEffect(() => {
     if (!projectId) return;
@@ -276,19 +282,27 @@ export function useProjectData(projectId: string | undefined, failed: () => void
       live("tasks", filter, "position", setTasks, failed),
       live("notes", filter, "position", setNotes, failed),
       live("labels", filter, "name", setLabels, failed),
+      live(
+        "comments",
+        pb.filter("task.project = {:id}", { id: projectId }),
+        "created",
+        setComments,
+        failed,
+      ),
     ];
     return () => {
       stops.forEach((stop) => stop());
       setTasks(null);
       setNotes(null);
       setLabels(null);
+      setComments(null);
     };
   }, [projectId]);
 
-  return { tasks, notes, labels, setTasks, setNotes, setLabels };
+  return { tasks, notes, labels, comments, setTasks, setNotes, setLabels, setComments };
 }
 
-type Writable = "projects" | "tasks" | "notes" | "labels";
+type Writable = "projects" | "tasks" | "notes" | "labels" | "comments";
 
 export const create = <T extends RecordModel>(
   collection: Writable,
@@ -343,12 +357,12 @@ export async function renumber(collection: "tasks" | "notes", ids: string[]) {
 export type Row = Task | Note;
 export type Setter<T> = Dispatch<SetStateAction<T[] | null>>;
 
-function put<T extends Row | Label>(set: Setter<T>, row: T) {
+function put<T extends Row | Label | Comment>(set: Setter<T>, row: T) {
   set((rows) => rows && [...rows.filter((r) => r.id !== row.id), row]);
 }
 
-export async function patch<T extends Row | Label>(
-  collection: "tasks" | "notes" | "labels",
+export async function patch<T extends Row | Label | Comment>(
+  collection: "tasks" | "notes" | "labels" | "comments",
   set: Setter<T>,
   old: T | undefined,
   data: Partial<T>,
@@ -365,8 +379,8 @@ export async function patch<T extends Row | Label>(
   }
 }
 
-export async function add<T extends Row | Label>(
-  collection: "tasks" | "notes" | "labels",
+export async function add<T extends Row | Label | Comment>(
+  collection: "tasks" | "notes" | "labels" | "comments",
   set: Setter<T>,
   data: Record<string, unknown>,
   fail: () => void,
@@ -380,8 +394,8 @@ export async function add<T extends Row | Label>(
   }
 }
 
-export async function drop<T extends Row | Label>(
-  collection: "tasks" | "notes" | "labels",
+export async function drop<T extends Row | Label | Comment>(
+  collection: "tasks" | "notes" | "labels" | "comments",
   set: Setter<T>,
   old: T | undefined,
   fail: () => void,

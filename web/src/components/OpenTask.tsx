@@ -17,8 +17,9 @@ export function OpenTask({
   back: string;
 }) {
   const t = useT();
-  const { tasks, labels, setTasks, setLabels } = useProjectData(project.id, () =>
-    toast(t("common.loadFailed")),
+  const { tasks, labels, comments, setTasks, setLabels, setComments } = useProjectData(
+    project.id,
+    () => toast(t("common.loadFailed")),
   );
   const sortedLabels = useMemo(
     () => labels && [...labels].sort((a, b) => a.name.localeCompare(b.name)),
@@ -53,6 +54,8 @@ export function OpenTask({
         drop("tasks", setTasks, open, failed);
       }}
       onCreateLabel={createLabel}
+      comments={comments}
+      setComments={setComments}
     />
   );
 }

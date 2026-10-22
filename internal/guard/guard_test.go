@@ -106,6 +106,7 @@ func TestOnlyUsedRoutesAnswer(t *testing.T) {
 	}
 	for _, path := range []string{
 		"/api/health", "/api/myboard/me", "/api/collections/users/auth-methods", "/api/collections/tasks/records",
+		"/api/collections/comments/records",
 	} {
 		if status, body := testutil.Do(t, h, asAlice, http.MethodGet, path, ""); status != 200 {
 			t.Errorf("GET %s: %d, want 200 (%v)", path, status, body)

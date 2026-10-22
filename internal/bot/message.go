@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	"html"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -12,14 +13,14 @@ import (
 
 // texts are the words of the messages; "who" is a label, so no verb has to agree with anyone's gender.
 type texts struct {
-	assigned, added, due, status, who string
-	statusTitle, statusName           map[string]string
-	months                            [12]string
+	assigned, added, comment, due, status, who string
+	statusTitle, statusName                    map[string]string
+	months                                     [12]string
 }
 
 var words = map[string]texts{
 	"ru": {
-		assigned: "Вам назначена задача", added: "Вас добавили в проект", due: "Срок:", status: "Статус:", who: "Кто:",
+		assigned: "Вам назначена задача", added: "Вас добавили в проект", comment: "Новый комментарий", due: "Срок:", status: "Статус:", who: "Кто:",
 		statusTitle: map[string]string{
 			"backlog": "Задача перенесена в «Бэклог»", "todo": "Задача перенесена в «К работе»", "in_progress": "Задача взята в работу",
 			"done": "Задача выполнена", "cancelled": "Задача отменена",
@@ -30,7 +31,7 @@ var words = map[string]texts{
 		months: [12]string{"января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"},
 	},
 	"en": {
-		assigned: "You've been assigned a task", added: "You've been added to a project", due: "Due:", status: "Status:", who: "By:",
+		assigned: "You've been assigned a task", added: "You've been added to a project", comment: "New comment", due: "Due:", status: "Status:", who: "By:",
 		statusTitle: map[string]string{
 			"backlog": `Task moved to "Backlog"`, "todo": `Task moved to "Todo"`, "in_progress": "Task started",
 			"done": "Task done", "cancelled": "Task cancelled",
@@ -69,6 +70,55 @@ func addedMessage(lang, publicURL string, project *core.Record, by string) strin
 	head := fmt.Sprintf(`<a href="%s/p/%s"><b>%s</b></a> · %s`, publicURL, strings.ToLower(key),
 		html.EscapeString(project.GetString("name")), key)
 	return message("📁", w.added, head, who(w, by))
+}
+
+// A few lines of the comment; the rest is one tap away in the task.
+const quoteLen = 300
+
+func commentMessage(lang, publicURL string, task, project *core.Record, by, body string) string {
+	var lines []string
+	if by != "" {
+		lines = append(lines, "<b>"+html.EscapeString(by)+":</b>")
+	}
+	quote := plain(body)
+	if quote == "" {
+		quote = strings.TrimSpace(body)
+	}
+	lines = append(lines, "<blockquote>"+html.EscapeString(cut(quote, quoteLen))+"</blockquote>")
+	return message("💬", words[lang].comment, taskHead(publicURL, task, project), lines)
+}
+
+// The comment goes as plain text: Markdown marks are dropped, everything the person wrote stays, so `#` and
+// `>` go only where they start a line. Go's regexp has no lookahead, hence two underscore rules.
+var markdown = []struct {
+	re *regexp.Regexp
+	to string
+}{
+	{regexp.MustCompile(`!?\[([^\]]*)\]\([^)]*\)`), "$1"},
+	{regexp.MustCompile(`(?m)^[ \t]*([-+*]|#{1,6}|>+)[ \t]+(\[[ xX]\][ \t]+)?`), ""},
+	{regexp.MustCompile("[*`~]"), ""},
+	{regexp.MustCompile(`(^|[^\p{L}\p{N}_])_+`), "$1"},
+	{regexp.MustCompile(`_+([^\p{L}\p{N}_]|$)`), "$1"},
+	{regexp.MustCompile(`\n{3,}`), "\n\n"},
+}
+
+func plain(body string) string {
+	for _, r := range markdown {
+		body = r.re.ReplaceAllString(body, r.to)
+	}
+	return strings.TrimSpace(body)
+}
+
+func cut(text string, limit int) string {
+	runes := []rune(text)
+	if len(runes) <= limit {
+		return text
+	}
+	head := string(runes[:limit])
+	if i := strings.LastIndexAny(head, " \n"); i > len(head)/2 {
+		head = head[:i]
+	}
+	return strings.TrimRight(head, " \n.,;:") + "…"
 }
 
 func taskHead(publicURL string, task, project *core.Record) string {

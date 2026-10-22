@@ -24,6 +24,18 @@
 .dialog > div {
   position: relative;
   grid-template-columns: minmax(0, 1fr) 290px;
+  grid-template-rows: auto auto 1fr;
+}
+
+.dialog .side {
+  grid-row: 2 / span 2;
+}
+
+.discussion {
+  grid-column: 1;
+  grid-row: 3;
+  min-width: 0;
+  padding: 4px 28px 28px;
 }
 
 .key {
@@ -422,7 +434,13 @@ input.search {
 
   .dialog > div {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto auto auto 1fr;
+  }
+
+  .discussion {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 0px));
   }
 
   .window > div > h2 {
@@ -454,7 +472,8 @@ input.search {
     min-height: 200px;
   }
 
-  .side {
+  .side,
+  .dialog .side {
     grid-column: 1 / -1;
     grid-row: 3;
     padding: 8px 16px 32px;

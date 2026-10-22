@@ -168,3 +168,74 @@ func TestNotifications(t *testing.T) {
 		t.Fatalf("bob got %d messages, want 3 (the status he set himself is not sent)", n)
 	}
 }
+
+func TestCommentNotifications(t *testing.T) {
+	fake := &fakeTelegram{sent: map[string][]string{}}
+	server := httptest.NewServer(fake)
+	defer server.Close()
+	apiBase = server.URL
+
+	app := testutil.NewApp(t)
+	defer app.Cleanup()
+	cfg := *testutil.Config
+	cfg.TelegramBotToken = "123:test"
+	Register(app, &cfg)
+	h := testutil.Handler(t, app)
+
+	alice := testutil.User(t, app, "310000001", "member")
+	bob := testutil.User(t, app, "310000002", "member")
+	carol := testutil.User(t, app, "310000003", "member")
+	dave := testutil.User(t, app, "310000004", "member")
+	p := testutil.Project(t, app, "CMT", alice, bob, carol, dave)
+	aliceTok, carolTok, daveTok := testutil.Token(t, alice), testutil.Token(t, carol), testutil.Token(t, dave)
+
+	_, task := testutil.Do(t, h, aliceTok, http.MethodPost, "/api/collections/tasks/records",
+		`{"project":"`+p.Id+`","title":"Login","assignees":["`+bob.Id+`"]}`)
+	fake.waitFor(t, "310000002", 1)
+	comment := func(tok, body string) {
+		if status, got := testutil.Do(t, h, tok, http.MethodPost, "/api/collections/comments/records",
+			`{"task":"`+task["id"].(string)+`","body":"`+body+`"}`); status != 200 {
+			t.Fatalf("comment: %d %v", status, got)
+		}
+	}
+
+	comment(daveTok, "Is **this** <done>?")
+	alicesFirst := fake.waitFor(t, "310000001", 1)[0]
+	for _, want := range []string{"Новый комментарий", "/p/cmt/1", "<b>user 310000004:</b>", "<blockquote>Is this &lt;done&gt;?</blockquote>"} {
+		if !strings.Contains(alicesFirst, want) {
+			t.Fatalf("comment message lacks %q:\n%s", want, alicesFirst)
+		}
+	}
+	fake.waitFor(t, "310000002", 2)
+
+	comment(carolTok, "Yes")
+	fake.waitFor(t, "310000004", 1)
+	fake.waitFor(t, "310000001", 2)
+	fake.waitFor(t, "310000002", 3)
+	if n := len(fake.texts("310000003")); n != 0 {
+		t.Fatalf("carol got %d messages about her own comment", n)
+	}
+	if n := len(fake.texts("310000004")); n != 1 {
+		t.Fatalf("dave got %d messages, want 1 (his own comment is not sent)", n)
+	}
+}
+
+func TestCommentQuote(t *testing.T) {
+	for _, c := range []struct{ in, want string }{
+		{"**bold**, `code` and [a link](https://x) ![pic](https://y)", "bold, code and a link pic"},
+		{"- [ ] first\n+ second\n\n\n\nnext", "first\nsecond\n\nnext"},
+		{"# Title\n> quoted\nissue #12, a > b, <tag>", "Title\nquoted\nissue #12, a > b, <tag>"},
+		{"snake_case stays, _em_ and __init__ go", "snake_case stays, em and init go"},
+	} {
+		if got := plain(c.in); got != c.want {
+			t.Errorf("plain(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+	long := strings.Repeat("word ", 100)
+	if got := cut(long, quoteLen); !strings.HasSuffix(got, "word…") || len([]rune(got)) > quoteLen+1 {
+		t.Errorf("cut: %q", got)
+	}
+	if got := cut("short", quoteLen); got != "short" {
+		t.Errorf("cut of a short text: %q", got)
+	}
+}
