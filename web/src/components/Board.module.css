@@ -153,6 +153,7 @@
   z-index: 1;
   display: inline-flex;
   align-items: center;
+  text-decoration: none;
   -webkit-user-drag: none;
 }
 
