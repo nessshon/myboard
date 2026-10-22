@@ -81,7 +81,13 @@ func main() {
 			auth.RegisterDevLogin(se)
 		}
 		serveFrontend(se, web.Dist(), cfg.PublicURL, func() boot {
-			return boot{Version: Version, Dev: se.App.IsDev(), Bot: notifier.Username()}
+			name := notifier.Username()
+			if name == "" && se.App.IsDev() {
+				// Shows the notification settings without a bot token; a hyphen is not allowed in
+				// Telegram usernames, so "Open the bot" cannot lead to someone's real bot.
+				name = "no-bot-token"
+			}
+			return boot{Version: Version, Dev: se.App.IsDev(), Bot: name}
 		})
 		return se.Next()
 	})
