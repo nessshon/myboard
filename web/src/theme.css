@@ -320,13 +320,21 @@ textarea.input.inplace,
   justify-content: center;
   border: 1.5px solid var(--border-strong);
   border-radius: 4px;
-  color: transparent;
+}
+
+.tick > svg {
+  visibility: hidden;
 }
 
 [aria-checked="true"] > .tick,
 [aria-pressed="true"] > .tick {
   background: var(--accent);
   border-color: var(--accent);
+}
+
+[aria-checked="true"] > .tick > svg,
+[aria-pressed="true"] > .tick > svg {
+  visibility: visible;
   color: var(--accent-text);
 }
 
