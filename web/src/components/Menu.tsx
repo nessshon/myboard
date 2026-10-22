@@ -38,6 +38,7 @@ export function Menu({ label, trigger, triggerClass, align = "right", children }
     };
     const esc = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      e.preventDefault();
       setOpen(false);
       button.current!.focus();
     };
