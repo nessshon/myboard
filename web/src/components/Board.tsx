@@ -35,7 +35,7 @@ import {
   type User,
   personName,
 } from "../api";
-import { formatDue, isOverdue } from "../format";
+import { formatDate, formatDue, isOverdue } from "../format";
 import { useLang, useT } from "../i18n";
 import { Avatar } from "./Avatar";
 import { Icon } from "./Icon";
@@ -85,6 +85,8 @@ function CardBody({
   const who = task.assignees.flatMap((id) => people.filter((p) => p.id === id));
   const tags = labels.filter((l) => task.labels.includes(l.id));
   const href = `/p/${projectKey.toLowerCase()}/${task.number}`;
+  // On a closed card the closing date replaces the due date, which no longer matters there.
+  const closed = isClosed(task.status) && task.closed;
   return (
     <>
       {task.priority !== "normal" && (
@@ -116,7 +118,7 @@ function CardBody({
       <a className={`stretch ${s.open}`} href={href} draggable={false} {...activator}>
         {task.title}
       </a>
-      {(tags.length > 0 || task.due || commentCount.has(task.id)) && (
+      {(tags.length > 0 || task.due || closed || commentCount.has(task.id)) && (
         <div className={s.meta}>
           {tags.map((l) => (
             <span key={l.id} className="tag">
@@ -124,15 +126,25 @@ function CardBody({
               <span className="ellipsis">{l.name}</span>
             </span>
           ))}
-          {task.due && (
+          {closed ? (
             <span
-              className={
-                isOverdue(task.due) && !isClosed(task.status) ? `${s.due} ${s.late}` : s.due
-              }
+              className={task.status === "done" ? `${s.due} ${s.finished}` : s.due}
+              title={t(task.status === "done" ? "task.closed.done" : "task.closed.cancelled")}
             >
-              <Icon name="calendar" size={12} />
-              {formatDue(task.due, lang)}
+              <Icon name="check" size={12} />
+              {formatDate(task.closed, lang)}
             </span>
+          ) : (
+            task.due && (
+              <span
+                className={
+                  isOverdue(task.due) && !isClosed(task.status) ? `${s.due} ${s.late}` : s.due
+                }
+              >
+                <Icon name="calendar" size={12} />
+                {formatDue(task.due, lang)}
+              </span>
+            )
           )}
           {commentCount.has(task.id) && (
             <span className={s.comments} title={t("comment.title")}>
@@ -260,6 +272,8 @@ function useLiveColumns(tasks: Task[], onMove: BoardProps["onMove"]) {
     }
     const index = column.indexOf(task.id);
     if (to === task.status && index === tasks.filter((x) => x.status === to).indexOf(task)) return;
+    // A closed column is ordered by the closing date, so a manual order there would not hold.
+    if (to === task.status && isClosed(to)) return;
     onMove(task.id, to, index);
   }
 

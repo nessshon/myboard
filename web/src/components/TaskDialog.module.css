@@ -96,6 +96,19 @@
   color: var(--muted);
 }
 
+.dates {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dates dd {
+  margin: 0;
+  color: var(--text);
+}
+
 .title {
   margin: 0;
   font-size: 22px;

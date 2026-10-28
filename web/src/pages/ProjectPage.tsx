@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import {
   add,
+  isClosed,
   membersOf,
   indexAmong,
   personName,
@@ -33,6 +34,11 @@ import { navigate } from "../router";
 import s from "./ProjectPage.module.css";
 
 const byPosition = (a: Row, b: Row) => a.position - b.position;
+
+// Closed columns run from the latest closed; tasks closed before the dates existed keep their order below.
+const closedAt = (x: Task) => (isClosed(x.status) && x.closed) || "";
+const boardOrder = (a: Task, b: Task) =>
+  closedAt(b).localeCompare(closedAt(a)) || a.position - b.position;
 
 type TaskFilter = { assignee: string[]; author: string[]; labels: string[] };
 const noFilter: TaskFilter = { assignee: [], author: [], labels: [] };
@@ -101,7 +107,7 @@ export function ProjectPage({
   const [editingLabels, setEditingLabels] = useState(false);
 
   const base = `/p/${project.key.toLowerCase()}`;
-  const sortedTasks = useMemo(() => tasks && [...tasks].sort(byPosition), [tasks]);
+  const sortedTasks = useMemo(() => tasks && [...tasks].sort(boardOrder), [tasks]);
   const sortedNotes = useMemo(() => notes && [...notes].sort(byPosition), [notes]);
   const sortedLabels = useMemo(
     () => labels && [...labels].sort((a, b) => a.name.localeCompare(b.name)),
@@ -141,13 +147,16 @@ export function ProjectPage({
   const moveTask = (id: string, status: Status, index: number) => {
     const column = sortedTasks!.filter((x) => x.status === status && x.id !== id);
     const shown = shownTasks!.filter((x) => x.status === status && x.id !== id);
+    // A closed column is ordered by date, so the card goes to its top at once; the server ignores this
+    // closed and sets its own.
+    const closing = isClosed(status) && { closed: new Date().toISOString().replace("T", " ") };
     return move(
       "tasks",
       setTasks,
       column,
       findTask(id),
-      indexAmong(column, shown, index),
-      { status },
+      closing ? 0 : indexAmong(column, shown, index),
+      { status, ...closing },
       failed,
     );
   };

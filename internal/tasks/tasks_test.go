@@ -214,3 +214,56 @@ func TestFindTasksByAssignee(t *testing.T) {
 		t.Fatalf("bob's tasks: %d %v", status, body)
 	}
 }
+
+func TestDatesFollowStatus(t *testing.T) {
+	app := testutil.NewApp(t)
+	defer app.Cleanup()
+
+	alice := testutil.User(t, app, "300000031", "member")
+	p := testutil.Project(t, app, "DAT", alice)
+	h := testutil.Handler(t, app)
+	tok := testutil.Token(t, alice)
+	const forged = "2020-01-01 00:00:00.000Z"
+
+	url := "/api/collections/tasks/records"
+	_, body := testutil.Do(t, h, tok, http.MethodPost, url,
+		`{"project":"`+p.Id+`","title":"t","status":"done","started":"`+forged+`"}`)
+	if body["started"] != "" || body["closed"] == "" || body["closed"] == forged {
+		t.Fatalf("created closed: started %q, closed %q", body["started"], body["closed"])
+	}
+
+	_, body = testutil.Do(t, h, tok, http.MethodPost, url,
+		`{"project":"`+p.Id+`","title":"t","status":"in_progress","closed":"`+forged+`"}`)
+	url += "/" + body["id"].(string)
+	started, _ := body["started"].(string)
+	if started == "" || started == forged || body["closed"] != "" {
+		t.Fatalf("created in progress: started %q, closed %q", started, body["closed"])
+	}
+
+	for _, step := range []struct {
+		patch           string
+		started, closed string // "kept", "set", or "" for cleared
+	}{
+		{`{"status":"done"}`, "kept", "set"},
+		{`{"status":"cancelled"}`, "kept", "set"},
+		{`{"title":"renamed","started":"` + forged + `","closed":"` + forged + `"}`, "kept", "kept"},
+		{`{"status":"in_progress"}`, "set", ""},
+		{`{"status":"todo"}`, "", ""},
+		{`{"status":"done"}`, "", "set"},
+		{`{"status":"backlog"}`, "", ""},
+	} {
+		before := body
+		_, body = testutil.Do(t, h, tok, http.MethodPatch, url, step.patch)
+		for field, want := range map[string]string{"started": step.started, "closed": step.closed} {
+			got, _ := body[field].(string)
+			ok := map[string]bool{
+				"kept": got == before[field],
+				"set":  got != "" && got != forged && got >= before[field].(string),
+				"":     got == "",
+			}[want]
+			if !ok {
+				t.Fatalf("%s: %s %q, want %q (was %q)", step.patch, field, got, want, before[field])
+			}
+		}
+	}
+}

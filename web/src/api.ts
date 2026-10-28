@@ -57,6 +57,8 @@ export interface Task extends RecordModel {
   position: number;
   author: string;
   edited: string;
+  started: string;
+  closed: string;
 }
 export interface Note extends RecordModel {
   project: string;

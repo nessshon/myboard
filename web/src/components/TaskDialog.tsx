@@ -352,24 +352,37 @@ function TaskBody({
         </div>
         {task && (
           <div className={s.made}>
-            <span className={s.by}>
-              {author ? (
-                <>
-                  {t("task.author")}
-                  <Avatar name={personName(author)} src={author.avatar_url} size={16} />
-                  <span className={s.who}>{personName(author, t("users.gone"))}</span>
-                </>
-              ) : (
-                t("task.created")
-              )}
-              {author ? "· " : " "}
-              {day(task.created)}
-            </span>
-            {task.edited && (
-              <span>
-                {t("task.edited")} {day(task.edited)}
+            {author && (
+              <span className={s.by}>
+                {t("task.author")}
+                <Avatar name={personName(author)} src={author.avatar_url} size={16} />
+                <span className={s.who}>{personName(author, t("users.gone"))}</span>
               </span>
             )}
+            <dl className={s.dates}>
+              <dt>{t("task.created")}</dt>
+              <dd>{day(task.created)}</dd>
+              {task.started && (
+                <>
+                  <dt>{t("task.started")}</dt>
+                  <dd>{day(task.started)}</dd>
+                </>
+              )}
+              {task.closed && (
+                <>
+                  <dt>
+                    {t(task.status === "done" ? "task.closed.done" : "task.closed.cancelled")}
+                  </dt>
+                  <dd>{day(task.closed)}</dd>
+                </>
+              )}
+              {task.edited && (
+                <>
+                  <dt>{t("task.edited")}</dt>
+                  <dd>{day(task.edited)}</dd>
+                </>
+              )}
+            </dl>
           </div>
         )}
       </aside>

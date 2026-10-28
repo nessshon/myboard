@@ -36,6 +36,12 @@ func Register(app core.App) {
 			return fmt.Errorf("find the top of the column: %w", err)
 		}
 		r.Set("position", top-positionStep)
+		stampStatus(r, "")
+		return e.Next()
+	})
+
+	app.OnRecordUpdate("tasks").BindFunc(func(e *core.RecordEvent) error {
+		stampStatus(e.Record, e.Record.Original().GetString("status"))
 		return e.Next()
 	})
 
@@ -78,6 +84,19 @@ func Register(app core.App) {
 		return e.Next()
 	})
 
+	app.OnRecordCreateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
+		e.Record.Set("started", "")
+		e.Record.Set("closed", "")
+		return e.Next()
+	})
+
+	app.OnRecordUpdateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
+		original := e.Record.Original()
+		e.Record.Set("started", original.Get("started"))
+		e.Record.Set("closed", original.Get("closed"))
+		return e.Next()
+	})
+
 	// The request's values are already on the record here (apis/record_crud.go loads the form before this
 	// hook), so they compare with the stored ones. Labels dropped by deleting a label come without a
 	// request, so they leave edited alone.
@@ -99,6 +118,24 @@ func Register(app core.App) {
 		}
 		return e.Next()
 	})
+}
+
+// Each date is when the task last entered that state; moving back clears it (docs/plan-task-dates.md).
+func stampStatus(task *core.Record, was string) {
+	status := task.GetString("status")
+	if status == was {
+		return
+	}
+	switch status {
+	case "in_progress":
+		task.Set("started", types.NowDateTime())
+		task.Set("closed", "")
+	case "done", "cancelled":
+		task.Set("closed", types.NowDateTime())
+	default:
+		task.Set("started", "")
+		task.Set("closed", "")
+	}
 }
 
 func validateTask(app core.App, task *core.Record) error {

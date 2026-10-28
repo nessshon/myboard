@@ -213,6 +213,10 @@
   color: var(--danger);
 }
 
+.finished {
+  color: var(--ok);
+}
+
 .mboard {
   flex: 1;
   display: flex;
