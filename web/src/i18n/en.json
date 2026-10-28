@@ -149,6 +149,7 @@
   "priority.urgent": "Urgent",
   "priority.high": "High",
   "priority.normal": "Normal",
+  "priority.low": "Low",
   "my.empty": "Nothing assigned to you.",
   "users.title": "Users",
   "users.removeTitle": "Delete user {name}?",

@@ -12,7 +12,7 @@ export function TaskRow({ task, project, href }: { task: Task; project: Project;
   const priority = task.priority === "normal" ? undefined : t(`priority.${task.priority}`);
   const done = isClosed(task.status);
   return (
-    <a className={priority ? `${s.row} ${s[task.priority]}` : s.row} href={href} title={priority}>
+    <a className={[s.row, s[task.priority]].filter(Boolean).join(" ")} href={href} title={priority}>
       <StatusDot status={task.status} />
       <ProjectBadge name={project.name} projectKey={project.key} color={project.color} size={18} />
       <span className={s.title}>

@@ -30,6 +30,10 @@
   box-shadow: inset 3px 0 0 var(--border);
 }
 
+.normal {
+  box-shadow: inset 3px 0 0 var(--p-normal);
+}
+
 .high {
   box-shadow: inset 3px 0 0 var(--p-high);
 }

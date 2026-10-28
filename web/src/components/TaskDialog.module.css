@@ -334,6 +334,10 @@ textarea.descIn {
   background: var(--border-strong);
 }
 
+.bar.normal {
+  background: var(--p-normal);
+}
+
 .bar.high {
   background: var(--p-high);
 }

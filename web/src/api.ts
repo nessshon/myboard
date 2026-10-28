@@ -12,7 +12,7 @@ const pb = new PocketBase("/");
 pb.autoCancellation(false);
 
 export const STATUSES = ["backlog", "todo", "in_progress", "done", "cancelled"] as const;
-export const PRIORITIES = ["normal", "high", "urgent"] as const;
+export const PRIORITIES = ["low", "normal", "high", "urgent"] as const;
 export type Status = (typeof STATUSES)[number];
 export const isClosed = (status: Status) => status === "done" || status === "cancelled";
 const OPEN = "status != 'done' && status != 'cancelled'";

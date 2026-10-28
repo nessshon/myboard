@@ -117,6 +117,7 @@
 /* Priority colours the whole outline: full colour round the top corners, easing into a soft tint
    of the same colour down the sides, so the card reads as one piece. Gradient borders keep
    border-radius; border-image would not. */
+.card.normal,
 .card.high,
 .card.urgent {
   --cap-edge: color-mix(in srgb, var(--cap) 30%, var(--edge));
@@ -124,6 +125,10 @@
   background:
     linear-gradient(var(--surface), var(--surface)) padding-box,
     linear-gradient(var(--cap) var(--r-md), var(--cap-edge) 36px) border-box;
+}
+
+.card.normal {
+  --cap: var(--p-normal);
 }
 
 .card.high {

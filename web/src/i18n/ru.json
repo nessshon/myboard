@@ -155,6 +155,7 @@
   "priority.urgent": "Срочный",
   "priority.high": "Высокий",
   "priority.normal": "Обычный",
+  "priority.low": "Низкий",
   "my.empty": "На вас нет открытых задач.",
   "users.title": "Пользователи",
   "users.removeTitle": "Удалить пользователя {name}?",
