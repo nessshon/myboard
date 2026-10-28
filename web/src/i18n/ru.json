@@ -147,6 +147,7 @@
   "comment.actions": "Действия с комментарием",
   "comment.deleteTitle": "Удалить комментарий?",
   "comment.mention": "Упомянуть",
+  "reaction.add": "Добавить реакцию",
   "status.backlog": "Бэклог",
   "status.todo": "К работе",
   "status.in_progress": "В работе",

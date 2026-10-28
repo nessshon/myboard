@@ -141,6 +141,7 @@
   "comment.actions": "Comment actions",
   "comment.deleteTitle": "Delete the comment?",
   "comment.mention": "Mention",
+  "reaction.add": "Add reaction",
   "status.backlog": "Backlog",
   "status.todo": "Todo",
   "status.in_progress": "In progress",

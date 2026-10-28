@@ -1,0 +1,94 @@
+.row {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.chip,
+.add {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.chip {
+  gap: 4px;
+  padding: 0 8px 0 7px;
+  background: var(--hover);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip:hover {
+  background: var(--active);
+  color: var(--text);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.chip[aria-pressed="true"]:hover {
+  background: var(--accent-soft-hover);
+}
+
+.emoji {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.add {
+  width: 24px;
+}
+
+.add:hover,
+.add[aria-expanded="true"] {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+}
+
+.pick {
+  height: 36px;
+  border-radius: var(--r-sm);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pick:hover {
+  background: var(--hover);
+}
+
+.mine {
+  background: var(--accent-soft);
+}
+
+/* Big enough for a finger. */
+@media (max-width: 640px) {
+  .chip,
+  .add {
+    height: 32px;
+  }
+
+  .add {
+    width: 32px;
+  }
+
+  .chip {
+    padding: 0 10px 0 9px;
+  }
+}

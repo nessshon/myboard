@@ -74,6 +74,26 @@ export interface Comment extends RecordModel {
   author: string;
   body: string;
 }
+// GitHub's eight (docs.github.com/en/rest/reactions) and three of our own; the server keeps the keys.
+export const REACTIONS = {
+  "+1": "👍",
+  "-1": "👎",
+  laugh: "😄",
+  hooray: "🎉",
+  confused: "😕",
+  heart: "❤️",
+  rocket: "🚀",
+  eyes: "👀",
+  done: "✅",
+  thanks: "🙏",
+  fire: "🔥",
+} as const;
+export type ReactionKey = keyof typeof REACTIONS;
+export interface Reaction extends RecordModel {
+  comment: string;
+  author: string;
+  emoji: ReactionKey;
+}
 export interface ApiToken extends RecordModel {
   name: string;
   hint: string;
@@ -271,6 +291,25 @@ function live<T extends RecordModel>(
   };
 }
 
+// Only the open task's discussion needs them; the board does not.
+export function useReactions(taskId: string, failed: () => void) {
+  const [reactions, setReactions] = useState<Reaction[] | null>(null);
+  useEffect(() => {
+    const stop = live(
+      "reactions",
+      pb.filter("comment.task = {:id}", { id: taskId }),
+      "created",
+      setReactions,
+      failed,
+    );
+    return () => {
+      stop();
+      setReactions(null);
+    };
+  }, [taskId]);
+  return [reactions, setReactions] as const;
+}
+
 export function useProjectData(projectId: string | undefined, failed: () => void) {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [notes, setNotes] = useState<Note[] | null>(null);
@@ -304,7 +343,7 @@ export function useProjectData(projectId: string | undefined, failed: () => void
   return { tasks, notes, labels, comments, setTasks, setNotes, setLabels, setComments };
 }
 
-type Writable = "projects" | "tasks" | "notes" | "labels" | "comments";
+type Writable = "projects" | "tasks" | "notes" | "labels" | "comments" | "reactions";
 
 export const create = <T extends RecordModel>(
   collection: Writable,
@@ -359,7 +398,7 @@ export async function renumber(collection: "tasks" | "notes", ids: string[]) {
 export type Row = Task | Note;
 export type Setter<T> = Dispatch<SetStateAction<T[] | null>>;
 
-function put<T extends Row | Label | Comment>(set: Setter<T>, row: T) {
+function put<T extends Row | Label | Comment | Reaction>(set: Setter<T>, row: T) {
   set((rows) => rows && [...rows.filter((r) => r.id !== row.id), row]);
 }
 
@@ -381,8 +420,8 @@ export async function patch<T extends Row | Label | Comment>(
   }
 }
 
-export async function add<T extends Row | Label | Comment>(
-  collection: "tasks" | "notes" | "labels" | "comments",
+export async function add<T extends Row | Label | Comment | Reaction>(
+  collection: "tasks" | "notes" | "labels" | "comments" | "reactions",
   set: Setter<T>,
   data: Record<string, unknown>,
   fail: () => void,
@@ -396,8 +435,8 @@ export async function add<T extends Row | Label | Comment>(
   }
 }
 
-export async function drop<T extends Row | Label | Comment>(
-  collection: "tasks" | "notes" | "labels" | "comments",
+export async function drop<T extends Row | Label | Comment | Reaction>(
+  collection: "tasks" | "notes" | "labels" | "comments" | "reactions",
   set: Setter<T>,
   old: T | undefined,
   fail: () => void,

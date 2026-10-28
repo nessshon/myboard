@@ -1,5 +1,16 @@
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
-import { add, drop, patch, personName, useMe, type Comment, type Setter, type User } from "../api";
+import {
+  add,
+  drop,
+  patch,
+  personName,
+  useMe,
+  useReactions,
+  type Comment,
+  type ReactionKey,
+  type Setter,
+  type User,
+} from "../api";
 import { formatMoment } from "../format";
 import { useLang, useT } from "../i18n";
 import { LIMITS } from "../limits";
@@ -11,6 +22,7 @@ import { Markdown, mentionOf, mentions } from "./Markdown";
 import { Menu, MenuItem } from "./Menu";
 import menu from "./Menu.module.css";
 import { ConfirmDialog } from "./ProjectDialogs";
+import { Reactions } from "./Reactions";
 import { toast } from "./Toast";
 import s from "./Discussion.module.css";
 
@@ -199,6 +211,9 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
   const handle = (person: User) => handleOf(person, people);
   const failed = () => toast(t("common.saveFailed"));
   const actionFailed = () => toast(t("common.actionFailed"));
+  const [reactions, setReactions] = useReactions(taskId, () => toast(t("common.loadFailed")));
+  // A second tap before the server answers would add the same reaction twice and be refused.
+  const reacting = useRef(new Set<string>());
   const thread = comments
     .filter((c) => c.task === taskId)
     .sort((a, b) => a.created.localeCompare(b.created));
@@ -213,6 +228,19 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
       setText("");
       sendPicks.current.clear();
     }
+  }
+
+  async function react(comment: string, emoji: ReactionKey) {
+    const key = `${comment} ${emoji}`;
+    if (!me || reacting.current.has(key)) return;
+    reacting.current.add(key);
+    const mine = reactions?.find(
+      (r) => r.comment === comment && r.emoji === emoji && r.author === me.id,
+    );
+    await (mine
+      ? drop("reactions", setReactions, mine, actionFailed)
+      : add("reactions", setReactions, { comment, emoji }, actionFailed));
+    reacting.current.delete(key);
   }
 
   function save() {
@@ -305,6 +333,14 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
               <div className={s.body}>
                 <Markdown text={c.body} people={people} />
               </div>
+            )}
+            {reactions && me && editing?.id !== c.id && (
+              <Reactions
+                reactions={reactions.filter((r) => r.comment === c.id)}
+                people={people}
+                me={me.id}
+                onToggle={(emoji) => react(c.id, emoji)}
+              />
             )}
           </article>
         );

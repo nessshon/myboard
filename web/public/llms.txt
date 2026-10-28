@@ -32,6 +32,10 @@ Each collection is at `$MB/api/collections/<name>/records`.
 - Only the author edits a comment; the author or an admin deletes it. Deleting a task deletes its comments.
 - To mention someone who sees the task (a project member or an admin), write `[@Name](user:USER_ID)`: they get notified, and the site shows their current name.
 
+**reactions** — emoji under a comment; read and add for members of the comment's task's project and admins.
+- `id`, `comment` (comment id), `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥), `created`.
+- One of each kind per person and comment: the same again answers 400. A reaction cannot be changed; only its author removes it. Nobody is notified.
+
 **users** — read for anyone signed in; managed in the web app.
 - `id`, `name`, `username` (Telegram), `role` (`admin` or `member`), `deleted` (bool).
 
@@ -123,6 +127,14 @@ curl -sG "${auth[@]}" "$MB/api/collections/comments/records" \
   --data-urlencode 'filter=task = "TASK_ID"' --data-urlencode 'sort=created' --data-urlencode 'expand=author'
 curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collections/comments/records" \
   -d '{"task":"TASK_ID","body":"Done, needs a review."}'
+```
+
+React to a comment, and take the reaction back:
+
+```sh
+curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collections/reactions/records" \
+  -d '{"comment":"COMMENT_ID","emoji":"+1"}'
+curl -s "${auth[@]}" -X DELETE "$MB/api/collections/reactions/records/REACTION_ID"
 ```
 
 Delete a task: `curl -s "${auth[@]}" -X DELETE "$MB/api/collections/tasks/records/TASK_ID"` (answers 204, cannot be undone).

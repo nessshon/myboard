@@ -23,7 +23,7 @@ var quoted = regexp.MustCompile(`"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'`)
 
 var allowedAPI = regexp.MustCompile(`^/api/(` +
 	`health|realtime|batch|myboard/.+|` +
-	`collections/(users|projects|labels|tasks|notes|comments|api_tokens)/records(/[^/]+)?|` +
+	`collections/(users|projects|labels|tasks|notes|comments|reactions|api_tokens)/records(/[^/]+)?|` +
 	`collections/users/(auth-methods|auth-refresh|auth-with-oauth2)` +
 	`)$`)
 
