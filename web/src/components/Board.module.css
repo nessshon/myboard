@@ -210,7 +210,8 @@
   white-space: nowrap;
 }
 
-.due + .comments {
+/* The date or the done mark keeps to the right edge, so its column lines up down the board. */
+.comments + .due {
   margin-left: 10px;
 }
 

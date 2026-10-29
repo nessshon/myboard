@@ -126,6 +126,12 @@ function CardBody({
               <span className="ellipsis">{l.name}</span>
             </span>
           ))}
+          {commentCount.has(task.id) && (
+            <span className={s.comments} title={t("comment.title")}>
+              <Icon name="message" size={12} />
+              {commentCount.get(task.id)}
+            </span>
+          )}
           {closed ? (
             <span
               className={task.status === "done" ? `${s.due} ${s.finished}` : s.due}
@@ -145,12 +151,6 @@ function CardBody({
                 {formatDue(task.due, lang)}
               </span>
             )
-          )}
-          {commentCount.has(task.id) && (
-            <span className={s.comments} title={t("comment.title")}>
-              <Icon name="message" size={12} />
-              {commentCount.get(task.id)}
-            </span>
           )}
         </div>
       )}
