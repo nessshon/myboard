@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type RefObject, type ReactNode } from "react";
 import {
   PRIORITIES,
   STATUSES,
@@ -68,10 +68,12 @@ type Props = {
 export function TaskDialog({ open, ...props }: Props & { open: boolean }) {
   const t = useT();
   const { task, projectKey } = props;
+  // The window's own ways out (a click beside it, Esc) ask about unsaved text as its close button does.
+  const closing = useRef(props.onClose);
   return (
     <Dialog
       open={open}
-      onClose={props.onClose}
+      onClose={() => closing.current()}
       width={920}
       className={`${s.window} ${s.dialog}`}
       title={
@@ -82,7 +84,7 @@ export function TaskDialog({ open, ...props }: Props & { open: boolean }) {
         )
       }
     >
-      <TaskBody key={task?.id ?? "new"} {...props} />
+      <TaskBody key={task?.id ?? "new"} {...props} closing={closing} />
     </Dialog>
   );
 }
@@ -100,7 +102,8 @@ function TaskBody({
   onCreateLabel,
   comments,
   setComments,
-}: Props) {
+  closing,
+}: Props & { closing: RefObject<() => void> }) {
   const t = useT();
   const lang = useLang();
   const [draft, setDraft] = useState(blank);
@@ -111,6 +114,8 @@ function TaskBody({
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<Upload[]>([]);
+  const [leaving, setLeaving] = useState<(() => void) | null>(null);
+  const thread = useRef({ unsaved: false, discard: () => {} });
   const me = useMe();
   const main = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLTextAreaElement>(null);
@@ -161,13 +166,52 @@ function TaskBody({
   }
 
   function cancel() {
-    if (!task) return onClose();
+    if (!task) return close();
     if (sending) return;
     fileEdit.cancel(descFiles);
     descUploads.forEach((u) => uploads.dismiss(u.key));
     setTried(false);
     setEditing(false);
   }
+
+  const changed =
+    editing &&
+    (task
+      ? title !== task.title || description !== task.description || fileEdit.changed(descFiles)
+      : !!title.trim() || !!description.trim() || picked.length > 0);
+  const unsaved = () => changed || thread.current.unsaved;
+  const ask = (then: () => void) => setLeaving(() => then);
+
+  function close() {
+    if (!unsaved()) return onClose();
+    ask(() => {
+      if (task && editing) cancel();
+      thread.current.discard();
+      onClose();
+    });
+  }
+  useEffect(() => {
+    closing.current = close;
+  });
+
+  // Esc closes a <dialog> on its own, and Chrome stops letting its cancel event be held back after two in
+  // a row; held back on keydown, it stays every time. A key the frame or a menu took is theirs.
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => {
+      const at = (e.target as Element).closest("dialog");
+      if (
+        e.key !== "Escape" ||
+        e.defaultPrevented ||
+        (at && at !== main.current?.closest("dialog"))
+      )
+        return;
+      if (!unsaved()) return;
+      e.preventDefault();
+      close();
+    };
+    addEventListener("keydown", esc);
+    return () => removeEventListener("keydown", esc);
+  });
 
   // Into the title on the way in, back to the menu on the way out. Without preventScroll the window
   // scrolls the focused field to its edge and the title jumps up.
@@ -233,7 +277,7 @@ function TaskBody({
         deleteLabel={t("task.delete")}
         onCancel={cancel}
         onSave={save}
-        onClose={onClose}
+        onClose={close}
       >
         {task && !editing && (
           <Menu
@@ -308,7 +352,7 @@ function TaskBody({
               )
             }
             onSubmit={save}
-            onCancel={task ? cancel : undefined}
+            onCancel={task ? () => (changed ? ask(cancel) : cancel()) : undefined}
           >
             <textarea
               aria-label={t("task.description")}
@@ -521,9 +565,21 @@ function TaskBody({
             setAttachments={setAttachments}
             uploads={uploads}
             token={token}
+            pending={thread}
+            ask={ask}
           />
         </div>
       )}
+      <ConfirmDialog
+        open={!!leaving}
+        title={t("common.discardTitle")}
+        confirm={t("common.discard")}
+        onClose={() => setLeaving(null)}
+        onConfirm={() => {
+          setLeaving(null);
+          leaving?.();
+        }}
+      />
       {task && (
         <ConfirmDialog
           open={asking}

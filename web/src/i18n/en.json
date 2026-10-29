@@ -10,6 +10,8 @@
   "common.done": "Done",
   "common.optional": "(optional)",
   "common.cannotUndo": "This cannot be undone.",
+  "common.discardTitle": "Discard changes?",
+  "common.discard": "Discard",
   "common.saveFailed": "Could not save; the change was reverted.",
   "common.loadFailed": "Could not load the data.",
   "common.actionFailed": "That did not work. Please try again.",

@@ -1,4 +1,12 @@
-import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from "react";
 import {
   add,
   drop,
@@ -39,6 +47,9 @@ type Props = {
   setAttachments: Setter<Attachment>;
   uploads: ReturnType<typeof useUploads>;
   token: string;
+  // What is typed here and not sent or saved, for the window to ask about before it closes.
+  pending: RefObject<{ unsaved: boolean; discard: () => void }>;
+  ask: (then: () => void) => void;
 };
 
 const escapeRe = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -200,6 +211,8 @@ export function Discussion({
   setAttachments,
   uploads,
   token,
+  pending,
+  ask,
 }: Props) {
   const t = useT();
   const lang = useLang();
@@ -344,6 +357,13 @@ export function Discussion({
     setEditing(null);
   }
 
+  const changed =
+    !!editing &&
+    (draft.trim() !== toShown(editing.body, people).text || fileEdit.changed(filesOf(editing.id)));
+  useEffect(() => {
+    pending.current = { unsaved: changed || !!text.trim() || going.length > 0, discard: cancel };
+  });
+
   return (
     <section className={s.thread} aria-labelledby={headId}>
       <h4 id={headId} className="heading">
@@ -414,7 +434,7 @@ export function Discussion({
                   </>
                 }
                 onSubmit={save}
-                onCancel={cancel}
+                onCancel={() => (changed ? ask(cancel) : cancel())}
               >
                 <Field
                   value={draft}

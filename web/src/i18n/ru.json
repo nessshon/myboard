@@ -10,6 +10,8 @@
   "common.done": "Готово",
   "common.optional": "(необязательно)",
   "common.cannotUndo": "Это действие нельзя отменить.",
+  "common.discardTitle": "Не сохранять изменения?",
+  "common.discard": "Не сохранять",
   "common.saveFailed": "Не удалось сохранить, изменение отменено.",
   "common.loadFailed": "Не удалось загрузить данные.",
   "common.actionFailed": "Не получилось. Попробуйте ещё раз.",

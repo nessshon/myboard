@@ -139,6 +139,7 @@ export function useFileEdit(
     },
     shown: (items: Attachment[]) => items.filter((a) => !hidden.includes(a.id)),
     hide: (a: Attachment) => setHidden((h) => [...h, a.id]),
+    changed: (items: Attachment[]) => hidden.length > 0 || added(items).length > 0,
     save(items: Attachment[]) {
       items
         .filter((a) => hidden.includes(a.id))
