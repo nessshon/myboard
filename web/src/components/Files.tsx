@@ -473,6 +473,8 @@ function Viewer({
       // React passes this close up to the task window, which checks the target; nothing else to do here.
       onClose={(e) => e.target === e.currentTarget && onClose()}
       onKeyDown={(e) => {
+        // Its keys are its own: Esc here closes the viewer, not the edit it was opened from.
+        e.stopPropagation();
         if (items.length > 1 && e.key === "ArrowLeft") go(-1);
         if (items.length > 1 && e.key === "ArrowRight") go(1);
       }}
