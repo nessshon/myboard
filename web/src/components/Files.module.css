@@ -244,7 +244,6 @@
   color: var(--text);
 }
 
-/* The viewer: a window of its own over everything, dark in both themes. */
 .viewer[open] {
   position: fixed;
   inset: 0;

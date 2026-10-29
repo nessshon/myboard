@@ -6,7 +6,6 @@ import { ATTACHMENT_EXTENSIONS, LIMITS } from "../limits";
 import { Icon } from "./Icon";
 import s from "./Files.module.css";
 
-// A file on its way: picked in the comment field, refused there, being sent, or failed to send.
 export type Upload = {
   key: string;
   file: File;
@@ -25,8 +24,7 @@ const isVideo = (name: string) => ["mp4", "mov", "webm"].includes(extension(name
 
 let lastKey = 0;
 
-// The reason a file cannot go, or "" when it can.
-export function refusal(file: File, t: ReturnType<typeof useT>) {
+function refusal(file: File, t: ReturnType<typeof useT>) {
   if (file.size > LIMITS.attachmentSize)
     return t("file.tooBig", { size: LIMITS.attachmentSize / 1024 / 1024 });
   if (!ATTACHMENT_EXTENSIONS.includes(extension(file.name))) return t("file.badType");
@@ -470,8 +468,7 @@ function Viewer({
       ref={ref}
       className={s.viewer}
       aria-label={a.name}
-      // React passes this close up to the task window, which checks the target; nothing else to do here.
-      onClose={(e) => e.target === e.currentTarget && onClose()}
+      onClose={onClose}
       onKeyDown={(e) => {
         // Its keys are its own: Esc here closes the viewer, not the edit it was opened from.
         e.stopPropagation();
