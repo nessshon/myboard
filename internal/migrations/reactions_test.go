@@ -36,6 +36,7 @@ func TestReactionRules(t *testing.T) {
 		{"a stranger cannot react", asStranger, http.MethodPost, records, thumbs, 400},
 		{"the same reaction twice is refused", asBob, http.MethodPost, records, thumbs, 400},
 		{"an unknown emoji is refused", asAlice, http.MethodPost, records, `{"comment":"` + comment.Id + `","emoji":"poop"}`, 400},
+		{"a later emoji is taken", asAlice, http.MethodPost, records, `{"comment":"` + comment.Id + `","emoji":"thinking"}`, 200},
 		{"another member reacts the same way", asAlice, http.MethodPost, records, thumbs, 200},
 		{"nobody changes a reaction", asBob, http.MethodPatch, one, `{"emoji":"heart"}`, 403},
 		{"another member cannot take it off", asAlice, http.MethodDelete, one, "", 404},

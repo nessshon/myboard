@@ -28,7 +28,7 @@ func init() {
 			&core.RelationField{Name: "author", CollectionId: users.Id, MaxSelect: 1},
 			// Keys, not the emoji themselves: the site draws them (web/src/api.ts, REACTIONS).
 			&core.SelectField{Name: "emoji", Required: true, MaxSelect: 1, Values: []string{
-				"+1", "-1", "laugh", "hooray", "confused", "heart", "rocket", "eyes", "done", "thanks", "fire",
+				"+1", "-1", "laugh", "hooray", "confused", "heart", "rocket", "eyes", "done", "thanks", "fire", "clap", "hundred", "thinking",
 			}},
 		)
 		addTimestamps(reactions)

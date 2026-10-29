@@ -33,7 +33,7 @@ Each collection is at `$MB/api/collections/<name>/records`.
 - To mention someone who sees the task (a project member or an admin), write `[@Name](user:USER_ID)`: they get notified, and the site shows their current name.
 
 **reactions** — emoji under a comment; read and add for members of the comment's task's project and admins.
-- `id`, `comment` (comment id), `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥), `created`.
+- `id`, `comment` (comment id), `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥, `clap` 👏, `hundred` 💯, `thinking` 🤔), `created`.
 - One of each kind per person and comment: the same again answers 400. A reaction cannot be changed; only its author removes it. Nobody is notified.
 
 **attachments** — files under a task's description or in a comment; read and add for members of the task's project and admins.

@@ -74,7 +74,7 @@ export interface Comment extends RecordModel {
   author: string;
   body: string;
 }
-// GitHub's eight (docs.github.com/en/rest/reactions) and three of our own; the server keeps the keys.
+// GitHub's eight (docs.github.com/en/rest/reactions) and six of our own; the server keeps the keys.
 export const REACTIONS = {
   "+1": "👍",
   "-1": "👎",
@@ -87,6 +87,9 @@ export const REACTIONS = {
   done: "✅",
   thanks: "🙏",
   fire: "🔥",
+  clap: "👏",
+  hundred: "💯",
+  thinking: "🤔",
 } as const;
 export type ReactionKey = keyof typeof REACTIONS;
 export interface Reaction extends RecordModel {
