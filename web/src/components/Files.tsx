@@ -4,8 +4,6 @@ import { formatSize } from "../format";
 import { useLang, useT } from "../i18n";
 import { ATTACHMENT_EXTENSIONS, LIMITS } from "../limits";
 import { Icon } from "./Icon";
-import { ConfirmDialog } from "./ProjectDialogs";
-import { toast } from "./Toast";
 import s from "./Files.module.css";
 
 // A file on its way: picked in the comment field, refused there, being sent, or failed to send.
@@ -124,8 +122,38 @@ export function useUploads(setAttachments: Setter<Attachment>) {
   return { uploads, send, retry, dismiss, dropAll };
 }
 
-// A field files can be dropped or pasted into, with a paperclip in its corner. Only files are taken: text
-// dragged or pasted in stays the field's business.
+// Files changed together with the text around them. A file added while editing is kept at once, so
+// others may see it before Save, and Cancel deletes it again; a removed one is only hidden until Save.
+export function useFileEdit(
+  setAttachments: Setter<Attachment>,
+  me: string | undefined,
+  fail: () => void,
+) {
+  const [before, setBefore] = useState(new Set<string>());
+  const [hidden, setHidden] = useState<string[]>([]);
+  const added = (items: Attachment[]) => items.filter((a) => !before.has(a.id) && a.author === me);
+  return {
+    begin(items: Attachment[]) {
+      setBefore(new Set(items.map((a) => a.id)));
+      setHidden([]);
+    },
+    shown: (items: Attachment[]) => items.filter((a) => !hidden.includes(a.id)),
+    hide: (a: Attachment) => setHidden((h) => [...h, a.id]),
+    save(items: Attachment[]) {
+      items
+        .filter((a) => hidden.includes(a.id))
+        .forEach((a) => drop("attachments", setAttachments, a, fail));
+      setHidden([]);
+    },
+    cancel(items: Attachment[]) {
+      added(items).forEach((a) => drop("attachments", setAttachments, a, fail));
+      setHidden([]);
+    },
+  };
+}
+
+// A field files can be dropped or pasted into, and its paperclip. Only files are taken: text dragged or
+// pasted in stays the field's business.
 export function useAttach(onFiles: (files: File[]) => void) {
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -185,9 +213,8 @@ type Props = {
   items: Attachment[];
   uploads?: Upload[];
   token: string;
-  // Given while the text around is being edited: then own files (any, for an admin) get a cross.
   canRemove?: (a: Attachment) => boolean;
-  setAttachments?: Setter<Attachment>;
+  onRemove?: (a: Attachment) => void;
   onRetry?: (key: string) => void;
   onDismiss?: (key: string) => void;
 };
@@ -197,14 +224,13 @@ export function Files({
   uploads = [],
   token,
   canRemove,
-  setAttachments,
+  onRemove,
   onRetry,
   onDismiss,
 }: Props) {
   const t = useT();
   const lang = useLang();
   const [viewing, setViewing] = useState<number | null>(null);
-  const [removing, setRemoving] = useState<Attachment | null>(null);
   // A thumb keeps the link it was first loaded by: a new token would make the browser fetch it again.
   const thumbs = useRef(new Map<string, string>());
   const thumbOf = (a: Attachment) => {
@@ -234,7 +260,7 @@ export function Files({
         className={s.remove}
         aria-label={t("file.delete")}
         title={t("file.delete")}
-        onClick={() => setRemoving(a)}
+        onClick={() => onRemove?.(a)}
       >
         <Icon name="x" size={13} />
       </button>
@@ -377,21 +403,6 @@ export function Files({
           token={token}
           onIndex={setViewing}
           onClose={() => setViewing(null)}
-        />
-      )}
-      {setAttachments && (
-        <ConfirmDialog
-          open={!!removing}
-          title={t("file.deleteTitle", { name: removing?.name ?? "" })}
-          text={t("common.cannotUndo")}
-          confirm={t("common.delete")}
-          onConfirm={() => {
-            drop("attachments", setAttachments, removing ?? undefined, () =>
-              toast(t("common.actionFailed")),
-            );
-            setRemoving(null);
-          }}
-          onClose={() => setRemoving(null)}
         />
       )}
     </div>

@@ -1,0 +1,100 @@
+.frame {
+  --ex: 12px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.frame:focus-within {
+  border-color: var(--accent);
+}
+
+.head {
+  position: relative;
+  margin: 0 var(--ex);
+  border-bottom: 1px solid var(--border);
+}
+
+.text {
+  position: relative;
+}
+
+.frame textarea {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 10px var(--ex);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--text);
+  resize: none;
+  field-sizing: content;
+  overflow-wrap: anywhere;
+}
+
+.frame textarea:focus {
+  box-shadow: none;
+}
+
+.text textarea {
+  min-height: calc(2 * 14px * 1.7 + 20px);
+  max-height: 60vh;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Firefox has no field-sizing yet; a fixed height there beats a two-line box. */
+@supports not (field-sizing: content) {
+  .text textarea {
+    height: 10lh;
+  }
+}
+
+.head textarea {
+  padding: 8px 0;
+  overflow: hidden;
+}
+
+.files {
+  padding: 0 var(--ex) 10px;
+}
+
+.files:empty {
+  display: none;
+}
+
+.files > * {
+  margin-top: 0;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--border);
+}
+
+.gap {
+  flex: 1;
+}
+
+.bar :global(.counter) {
+  position: static;
+  padding: 0;
+}
+
+@media (max-width: 640px) {
+  .frame {
+    --ex: 8px;
+  }
+
+  /* 16px keeps iOS from zooming into the field; the line keeps the reading height (theme.css). */
+  .text textarea {
+    font-size: 16px;
+    line-height: calc(14px * 1.7);
+  }
+}

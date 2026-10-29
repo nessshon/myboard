@@ -1,11 +1,4 @@
-import {
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ClipboardEvent,
-  type KeyboardEvent,
-} from "react";
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import {
   add,
   drop,
@@ -25,7 +18,8 @@ import { LIMITS } from "../limits";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
-import { Files, forget, pick, useAttach, type Upload, type useUploads } from "./Files";
+import { Editor } from "./Editor";
+import { Files, forget, pick, useAttach, useFileEdit, type Upload, type useUploads } from "./Files";
 import { Icon } from "./Icon";
 import { Markdown, mentionOf, mentions } from "./Markdown";
 import { Menu, MenuItem } from "./Menu";
@@ -83,8 +77,6 @@ function toShown(body: string, people: User[]) {
 type FieldProps = {
   value: string;
   onChange: (value: string) => void;
-  onKeyDown: (e: KeyboardEvent) => void;
-  onPaste?: (e: ClipboardEvent) => void;
   mentionable: User[];
   handle: (person: User) => string;
   picks: Map<string, string>;
@@ -95,8 +87,6 @@ type FieldProps = {
 function Field({
   value,
   onChange,
-  onKeyDown,
-  onPaste,
   mentionable,
   handle,
   picks,
@@ -145,28 +135,23 @@ function Field({
   }
 
   // While the list is open the arrows, Enter, Tab and Esc belong to it; Shift+Enter is still a new
-  // line, and keys that compose a character (IME) are left alone.
+  // line, and keys that compose a character (IME) are left alone. Other keys go on to the editor.
   function keyDown(e: KeyboardEvent) {
-    if (matches.length && !e.nativeEvent.isComposing) {
-      const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? matches.length - 1 : 0;
-      const accept =
-        e.key === "Tab" || (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey);
-      if (step || accept || e.key === "Escape") {
-        e.preventDefault();
-        if (step) setActive((active + step) % matches.length);
-        else if (accept) pick(matches[active]);
-        else setQuery(null);
-        return;
-      }
-    }
-    onKeyDown(e);
+    if (!matches.length || e.nativeEvent.isComposing) return;
+    const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? matches.length - 1 : 0;
+    const accept =
+      e.key === "Tab" || (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey);
+    if (!step && !accept && e.key !== "Escape") return;
+    e.preventDefault();
+    if (step) setActive((active + step) % matches.length);
+    else if (accept) pick(matches[active]);
+    else setQuery(null);
   }
 
   return (
     <>
       <textarea
         ref={ref}
-        className={`input ${s.input}`}
         aria-label={t("comment.placeholder")}
         aria-autocomplete="list"
         aria-controls={matches.length ? listId : undefined}
@@ -182,7 +167,6 @@ function Field({
         onSelect={(e) => track(e.currentTarget)}
         onBlur={() => setQuery(null)}
         onKeyDown={keyDown}
-        onPaste={onPaste}
       />
       {matches.length > 0 && (
         <ul id={listId} role="listbox" aria-label={t("comment.mention")} className={s.people}>
@@ -239,6 +223,8 @@ export function Discussion({
   const handle = (person: User) => handleOf(person, people);
   const failed = () => toast(t("common.saveFailed"));
   const actionFailed = () => toast(t("common.actionFailed"));
+  const fileEdit = useFileEdit(setAttachments, me?.id, actionFailed);
+  const editAttach = useAttach(addToEdited);
   const [reactions, setReactions] = useReactions(taskId, () => toast(t("common.loadFailed")));
   // A second tap before the server answers would add the same reaction twice and be refused.
   const reacting = useRef(new Set<string>());
@@ -248,6 +234,8 @@ export function Discussion({
 
   const going = picked.filter((u) => u.state === "picked");
   const filesOf = (comment: string) => attachments.filter((a) => a.comment === comment);
+  const uploadsOf = (comment: string) => uploads.uploads.filter((u) => u.comment === comment);
+  const sending = (comment: string) => uploadsOf(comment).some((u) => u.state === "sending");
 
   function take(files: File[]) {
     let room = LIMITS.attachmentsPerComment - going.length;
@@ -309,24 +297,52 @@ export function Discussion({
     reacting.current.delete(key);
   }
 
+  function startEdit(c: Comment) {
+    const shown = toShown(c.body, people);
+    editPicks.current = shown.picks;
+    setDraft(shown.text);
+    fileEdit.begin(filesOf(c.id));
+    setEditing(c);
+  }
+
+  // A file added while editing goes at once, as under a task's description; still ten to a comment.
+  function addToEdited(files: File[]) {
+    if (!editing) return;
+    let room =
+      LIMITS.attachmentsPerComment -
+      fileEdit.shown(filesOf(editing.id)).length -
+      uploadsOf(editing.id).length;
+    const fresh: Upload[] = [];
+    for (const u of pick(files, taskId, t)) {
+      if (u.reason) toast(`${u.file.name}: ${u.reason}`);
+      else if (room-- > 0) fresh.push(u);
+      else {
+        forget(u);
+        toast(`${u.file.name}: ${t("file.tooMany", { count: LIMITS.attachmentsPerComment })}`);
+      }
+    }
+    uploads.send(fresh, editing.id);
+  }
+
   function save() {
+    if (!editing || sending(editing.id)) return;
     const body = toStored(draft.trim(), editPicks.current);
-    if (!editing || (!body && !filesOf(editing.id).length)) return;
+    const files = filesOf(editing.id);
+    if (!body && !fileEdit.shown(files).length) return;
     // Compared as shown: a renamed person changes the stored link text, not what was written.
     if (draft.trim() !== toShown(editing.body, people).text) {
       patch("comments", setComments, editing, { body }, failed);
     }
+    fileEdit.save(files);
     setEditing(null);
   }
 
-  // Esc cancels an edit; in a filled reply field it only keeps the window from closing with the text.
-  const keys = (onEnter: () => void, onEscape?: () => void) => (e: KeyboardEvent) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) onEnter();
-    if (e.key === "Escape" && (onEscape || text.trim())) {
-      e.preventDefault();
-      onEscape?.();
-    }
-  };
+  function cancel() {
+    if (!editing || sending(editing.id)) return;
+    fileEdit.cancel(filesOf(editing.id));
+    uploadsOf(editing.id).forEach((u) => uploads.dismiss(u.key));
+    setEditing(null);
+  }
 
   return (
     <section className={s.thread} aria-labelledby={headId}>
@@ -355,15 +371,7 @@ export function Discussion({
                 trigger={<Icon name="more" size={16} />}
               >
                 {mine && (
-                  <MenuItem
-                    icon="pencil"
-                    onClick={() => {
-                      const shown = toShown(c.body, people);
-                      editPicks.current = shown.picks;
-                      setDraft(shown.text);
-                      setEditing(c);
-                    }}
-                  >
+                  <MenuItem icon="pencil" onClick={() => startEdit(c)}>
                     {t("common.edit")}
                   </MenuItem>
                 )}
@@ -373,52 +381,69 @@ export function Discussion({
               </Menu>
             )}
             {editing?.id === c.id ? (
-              <div className={s.edit}>
-                <div className={s.box}>
-                  <Field
-                    value={draft}
-                    onChange={setDraft}
-                    onKeyDown={keys(save, () => setEditing(null))}
-                    mentionable={mentionable}
-                    handle={handle}
-                    picks={editPicks.current}
-                    autoFocus
+              <Editor
+                className={s.body}
+                attach={editAttach}
+                files={
+                  <Files
+                    items={fileEdit.shown(filesOf(c.id))}
+                    uploads={uploadsOf(c.id)}
+                    token={token}
+                    canRemove={() => true}
+                    onRemove={fileEdit.hide}
+                    onRetry={uploads.retry}
+                    onDismiss={uploads.dismiss}
                   />
-                  <Counter value={draft} max={LIMITS.comment} />
-                </div>
-                <div className={s.row}>
-                  <Button size="sm" onClick={() => setEditing(null)}>
-                    {t("common.cancel")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    disabled={!draft.trim() && !filesOf(c.id).length}
-                    onClick={save}
-                  >
-                    {t("common.save")}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              c.body && (
-                <div className={s.body}>
-                  <Markdown text={c.body} people={people} />
-                </div>
-              )
-            )}
-            {(filesOf(c.id).length > 0 || uploads.uploads.some((u) => u.comment === c.id)) && (
-              <div className={s.body}>
-                <Files
-                  items={filesOf(c.id)}
-                  uploads={uploads.uploads.filter((u) => u.comment === c.id)}
-                  token={token}
-                  canRemove={editing?.id === c.id ? () => mine || me?.role === "admin" : undefined}
-                  setAttachments={setAttachments}
-                  onRetry={uploads.retry}
-                  onDismiss={uploads.dismiss}
+                }
+                counter={<Counter value={draft} max={LIMITS.comment} />}
+                actions={
+                  <>
+                    <Button size="sm" variant="ghost" disabled={sending(c.id)} onClick={cancel}>
+                      {t("common.cancel")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={
+                        sending(c.id) || (!draft.trim() && !fileEdit.shown(filesOf(c.id)).length)
+                      }
+                      onClick={save}
+                    >
+                      {t("common.save")}
+                    </Button>
+                  </>
+                }
+                onSubmit={save}
+                onCancel={cancel}
+              >
+                <Field
+                  value={draft}
+                  onChange={setDraft}
+                  mentionable={mentionable}
+                  handle={handle}
+                  picks={editPicks.current}
+                  autoFocus
                 />
-              </div>
+              </Editor>
+            ) : (
+              <>
+                {c.body && (
+                  <div className={s.body}>
+                    <Markdown text={c.body} people={people} />
+                  </div>
+                )}
+                {(filesOf(c.id).length > 0 || uploadsOf(c.id).length > 0) && (
+                  <div className={s.body}>
+                    <Files
+                      items={filesOf(c.id)}
+                      uploads={uploadsOf(c.id)}
+                      token={token}
+                      onRetry={uploads.retry}
+                      onDismiss={uploads.dismiss}
+                    />
+                  </div>
+                )}
+              </>
             )}
             {reactions && me && editing?.id !== c.id && (
               <Reactions
@@ -431,24 +456,11 @@ export function Discussion({
           </article>
         );
       })}
-      <div className={s.compose}>
-        <div {...attach.zone} className={`${s.box} ${attach.zone.className}`}>
-          <Field
-            value={text}
-            onChange={setText}
-            onKeyDown={keys(send)}
-            onPaste={attach.onPaste}
-            mentionable={mentionable}
-            handle={handle}
-            picks={sendPicks.current}
-            placeholder={t("comment.placeholder")}
-          />
-          <Counter value={text} max={LIMITS.comment} />
-          {attach.button}
-        </div>
-        <Files items={[]} uploads={picked} token={token} onDismiss={unpick} />
-        <div className={s.row}>
-          <span className={s.hint}>{t("comment.hint")}</span>
+      <Editor
+        attach={attach}
+        files={<Files items={[]} uploads={picked} token={token} onDismiss={unpick} />}
+        counter={<Counter value={text} max={LIMITS.comment} />}
+        actions={
           <Button
             variant="primary"
             size="sm"
@@ -457,8 +469,19 @@ export function Discussion({
           >
             {t("comment.send")}
           </Button>
-        </div>
-      </div>
+        }
+        onSubmit={send}
+        dirty={!!text.trim() || going.length > 0}
+      >
+        <Field
+          value={text}
+          onChange={setText}
+          mentionable={mentionable}
+          handle={handle}
+          picks={sendPicks.current}
+          placeholder={t("comment.placeholder")}
+        />
+      </Editor>
       <ConfirmDialog
         open={!!deleting}
         title={t("comment.deleteTitle")}

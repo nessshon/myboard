@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   PRIORITIES,
   STATUSES,
+  drop,
   isClosed,
   useAttachments,
   useFileToken,
@@ -166,7 +167,9 @@ function TaskBody({
       uploads={uploads.uploads.filter((u) => !u.comment)}
       token={token}
       canRemove={editing ? (a) => a.author === me?.id || me?.role === "admin" : undefined}
-      setAttachments={setAttachments}
+      onRemove={(a) =>
+        drop("attachments", setAttachments, a, () => toast(t("common.actionFailed")))
+      }
       onRetry={uploads.retry}
       onDismiss={uploads.dismiss}
     />

@@ -90,12 +90,13 @@
   pointer-events: none;
 }
 
+/* At the bottom, clear of the remove mark in the corner even on a 60px phone thumb. */
 .retry {
   position: absolute;
   z-index: 1;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 6px;
+  transform: translateX(-50%);
   width: 28px;
   height: 28px;
   display: inline-flex;
@@ -112,8 +113,8 @@
   z-index: 1;
   top: 4px;
   right: 4px;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   margin: 0;
   border-radius: 50%;
   background: rgb(0 0 0 / 0.6);
@@ -195,10 +196,11 @@
 }
 
 .remove {
+  position: relative;
   flex: none;
-  width: 22px;
-  height: 22px;
-  margin-right: 3px;
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -212,19 +214,20 @@
   color: var(--text);
 }
 
-.attachable textarea {
-  padding-bottom: 38px;
+/* Reaches a finger past the drawn circle. */
+.remove::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
 }
 
-.over textarea {
+.attachable.over {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
 .clip {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;
+  flex: none;
   width: 28px;
   height: 28px;
   display: inline-flex;
@@ -398,10 +401,14 @@
   }
 
   .thumb .remove {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     top: 3px;
     right: 3px;
+  }
+
+  .remove::before {
+    inset: -6px;
   }
 
   .chip {
@@ -409,10 +416,8 @@
   }
 
   .clip {
-    left: 4px;
-    bottom: 4px;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
   }
 
   .name {
