@@ -286,7 +286,7 @@ function TaskBody({
               {t("common.edit")}
             </MenuItem>
             <MenuItem icon="trash" danger onClick={() => setAsking(true)}>
-              {t("task.delete")}
+              {t("common.delete")}
             </MenuItem>
           </Menu>
         )}
