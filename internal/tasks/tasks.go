@@ -71,7 +71,7 @@ func Register(app core.App) {
 		return e.Next()
 	})
 
-	app.OnRecordCreateRequest("tasks", "notes", "comments", "reactions").BindFunc(func(e *core.RecordRequestEvent) error {
+	app.OnRecordCreateRequest("tasks", "notes", "comments", "reactions", "attachments").BindFunc(func(e *core.RecordRequestEvent) error {
 		e.Record.Set("author", "")
 		if e.Auth != nil && e.Auth.Collection().Name == "users" {
 			e.Record.Set("author", e.Auth.Id)
@@ -118,6 +118,8 @@ func Register(app core.App) {
 		}
 		return e.Next()
 	})
+
+	registerAttachments(app)
 }
 
 // Each date is when the task last entered that state; moving back clears it (docs/plan-task-dates.md).

@@ -95,7 +95,7 @@ func TestOnlyUsedRoutesAnswer(t *testing.T) {
 	asAlice := testutil.Token(t, testutil.User(t, app, "440000003", "member"))
 
 	for _, path := range []string{
-		"/_/", "/api/settings", "/api/logs", "/api/backups", "/api/crons", "/api/sql", "/api/files/token",
+		"/_/", "/api/settings", "/api/logs", "/api/backups", "/api/crons", "/api/sql", "/api/files/users/x/y.png",
 		"/api/collections", "/api/collections/tasks", "/api/collections/_superusers/auth-with-password",
 		"/api/collections/users/request-email-change", "/api/collections/users/request-password-reset",
 		"/api/collections/users/request-otp", "/api/collections/users/impersonate/x", "/api/oauth2-redirect",

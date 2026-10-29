@@ -23,8 +23,9 @@ var quoted = regexp.MustCompile(`"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'`)
 
 var allowedAPI = regexp.MustCompile(`^/api/(` +
 	`health|realtime|batch|myboard/.+|` +
-	`collections/(users|projects|labels|tasks|notes|comments|reactions|api_tokens)/records(/[^/]+)?|` +
-	`collections/users/(auth-methods|auth-refresh|auth-with-oauth2)` +
+	`collections/(users|projects|labels|tasks|notes|comments|reactions|attachments|api_tokens)/records(/[^/]+)?|` +
+	`collections/users/(auth-methods|auth-refresh|auth-with-oauth2)|` +
+	`files/token|files/attachments/[^/]+/[^/]+` +
 	`)$`)
 
 // A batch may only reorder: the site sends nothing else in one (web/src/api.ts, renumber). Hooks inside a

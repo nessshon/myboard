@@ -34,7 +34,7 @@ func TestCommentRules(t *testing.T) {
 	}{
 		{"a stranger cannot read it", asStranger, http.MethodGet, one, "", 404},
 		{"a stranger cannot comment", asStranger, http.MethodPost, records, `{"task":"` + task.Id + `","body":"x"}`, 400},
-		{"an empty comment is refused", asBob, http.MethodPost, records, `{"task":"` + task.Id + `","body":""}`, 400},
+		{"a comment without text is fine: its files follow", asBob, http.MethodPost, records, `{"task":"` + task.Id + `","body":""}`, 200},
 		{"a comment of spaces is refused", asBob, http.MethodPost, records, `{"task":"` + task.Id + `","body":" \n "}`, 400},
 		{"another member cannot edit it", asBob, http.MethodPatch, one, `{"body":"x"}`, 404},
 		{"another member cannot delete it", asBob, http.MethodDelete, one, "", 404},
