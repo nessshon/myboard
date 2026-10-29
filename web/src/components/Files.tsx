@@ -260,7 +260,11 @@ export function Files({
         className={s.remove}
         aria-label={t("file.delete")}
         title={t("file.delete")}
-        onClick={() => onRemove?.(a)}
+        onClick={(e) => {
+          // The button goes with the file; the keyboard stays in the editor it was in.
+          e.currentTarget.closest("[data-editor]")?.querySelector("textarea")?.focus();
+          onRemove?.(a);
+        }}
       >
         <Icon name="x" size={13} />
       </button>

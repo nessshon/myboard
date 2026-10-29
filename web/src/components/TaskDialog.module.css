@@ -311,6 +311,27 @@ textarea.descIn {
   min-height: 140px;
 }
 
+/* The frame stands out by its border and padding, so the title text inside stays where it was. */
+.editor {
+  margin: -9px calc(-1px - var(--ex)) 0;
+}
+
+.addDesc {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: left;
+  cursor: text;
+}
+
+.addDesc:hover {
+  color: var(--text);
+}
+
 .descEmpty {
   min-height: 140px;
   display: flex;

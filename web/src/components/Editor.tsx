@@ -44,6 +44,7 @@ export function Editor({
 
   return (
     <div
+      data-editor
       {...attach?.zone}
       className={[s.frame, attach?.zone.className, className].filter(Boolean).join(" ")}
       onKeyDown={keyDown}

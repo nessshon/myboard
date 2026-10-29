@@ -58,6 +58,11 @@
   overflow: hidden;
 }
 
+/* Room for the counter in the corner, as theme.css gives a field. */
+.head textarea:has(+ :global(.counter)) {
+  padding-right: 84px;
+}
+
 .files {
   padding: 0 var(--ex) 10px;
 }

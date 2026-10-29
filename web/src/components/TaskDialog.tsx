@@ -2,7 +2,6 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   PRIORITIES,
   STATUSES,
-  drop,
   isClosed,
   useAttachments,
   useFileToken,
@@ -23,14 +22,16 @@ import { Button } from "./Button";
 import { Counter } from "./Counter";
 import { Dialog } from "./Dialog";
 import { Discussion } from "./Discussion";
-import { Files, pick, useAttach, useUploads } from "./Files";
+import { Editor } from "./Editor";
+import { Files, pick, useAttach, useFileEdit, useUploads } from "./Files";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
-import { Menu, MenuCheck } from "./Menu";
+import { Menu, MenuCheck, MenuItem } from "./Menu";
 import { PROJECT_COLORS } from "./ProjectBadge";
 import { ConfirmDialog } from "./ProjectDialogs";
 import { Select } from "./Select";
 import { toast } from "./Toast";
+import b from "./Button.module.css";
 import s from "./TaskDialog.module.css";
 
 export type TaskFields = Pick<
@@ -109,20 +110,35 @@ function TaskBody({
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const me = useMe();
+  const main = useRef<HTMLDivElement>(null);
+  const titleField = useRef<HTMLTextAreaElement>(null);
   const [attachments, setAttachments] = useAttachments(task?.id, () =>
     toast(t("common.loadFailed")),
   );
   const token = useFileToken(!!task);
   const uploads = useUploads(setAttachments);
   const attach = useAttach(attachFiles);
+  const fileEdit = useFileEdit(setAttachments, me?.id, () => toast(t("common.actionFailed")));
+  const descFiles = (attachments ?? []).filter((a) => !a.comment);
+  const descUploads = uploads.uploads.filter((u) => !u.comment);
+  const sending = descUploads.some((u) => u.state === "sending");
 
   const v = task ?? draft;
   const set = (patch: Partial<TaskFields>) =>
     task ? onPatch(patch) : setDraft((d) => ({ ...d, ...patch }));
 
+  function edit() {
+    if (!task) return;
+    setTitle(task.title);
+    setDescription(task.description);
+    setTried(false);
+    fileEdit.begin(descFiles);
+    setEditing(true);
+  }
+
   async function save() {
     setTried(true);
-    if (!title.trim() || busy) return;
+    if (!title.trim() || busy || sending) return;
     if (!task) {
       setBusy(true);
       await onCreate?.({ ...draft, title: title.trim(), description });
@@ -131,15 +147,30 @@ function TaskBody({
     }
     setEditing(false);
     onPatch({ title: title.trim(), description });
+    fileEdit.save(descFiles);
   }
 
   function cancel() {
     if (!task) return onClose();
-    setTitle(task.title);
-    setDescription(task.description);
+    if (sending) return;
+    fileEdit.cancel(descFiles);
+    descUploads.forEach((u) => uploads.dismiss(u.key));
     setTried(false);
     setEditing(false);
   }
+
+  // Into the title on the way in, back to the menu on the way out. Without preventScroll the window
+  // scrolls the focused field to its edge and the title jumps up.
+  const wasEditing = useRef(editing);
+  useEffect(() => {
+    if (editing) titleField.current?.focus({ preventScroll: true });
+    else if (wasEditing.current)
+      main.current
+        ?.closest("dialog")
+        ?.querySelector<HTMLElement>(`[aria-label="${t("task.actions")}"]`)
+        ?.focus({ preventScroll: true });
+    wasEditing.current = editing;
+  }, [editing]);
 
   const choices = [
     ...members,
@@ -154,7 +185,6 @@ function TaskBody({
     });
   const author = task && people.find((p) => p.id === task.author);
 
-  // A file under the description goes at once, as a comment does; it does not wait for "Save".
   function attachFiles(files: File[]) {
     if (!task || !files.length) return;
     const all = pick(files, task.id, t);
@@ -163,13 +193,9 @@ function TaskBody({
   }
   const files = task && (
     <Files
-      items={(attachments ?? []).filter((a) => !a.comment)}
-      uploads={uploads.uploads.filter((u) => !u.comment)}
+      items={descFiles}
+      uploads={descUploads}
       token={token}
-      canRemove={editing ? (a) => a.author === me?.id || me?.role === "admin" : undefined}
-      onRemove={(a) =>
-        drop("attachments", setAttachments, a, () => toast(t("common.actionFailed")))
-      }
       onRetry={uploads.retry}
       onDismiss={uploads.dismiss}
     />
@@ -182,60 +208,95 @@ function TaskBody({
   return (
     <>
       <WindowTools
-        editing={editing}
+        editing={!task}
         isNew={!task}
         busy={busy}
         deleteLabel={t("task.delete")}
-        onEdit={() => setEditing(true)}
-        onDelete={() => setAsking(true)}
         onCancel={cancel}
         onSave={save}
         onClose={onClose}
-      />
-      <div
-        className={s.main}
-        onKeyDown={(e) => {
-          if (editing && e.key === "Enter" && (e.metaKey || e.ctrlKey)) save();
-        }}
       >
+        {task && !editing && (
+          <Menu
+            label={t("task.actions")}
+            triggerClass={b.icon}
+            trigger={<Icon name="more" size={18} />}
+          >
+            <MenuItem icon="pencil" onClick={edit}>
+              {t("common.edit")}
+            </MenuItem>
+            <MenuItem icon="trash" danger onClick={() => setAsking(true)}>
+              {t("task.delete")}
+            </MenuItem>
+          </Menu>
+        )}
+      </WindowTools>
+      <div ref={main} className={s.main}>
         {editing ? (
-          <>
-            <div className={s.box}>
-              <input
-                className={`input inplace ${s.titleIn}`}
-                aria-label={t("task.title")}
-                aria-invalid={tried && !title.trim()}
-                placeholder={t("task.titlePlaceholder")}
-                value={title}
-                maxLength={LIMITS.taskTitle}
-                autoFocus
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              {tried && !title.trim() ? (
-                <span className="counter full">{t("task.titleRequired")}</span>
-              ) : (
-                <Counter value={title} max={LIMITS.taskTitle} />
-              )}
-            </div>
-            {/* A new task has nowhere to keep a file yet: files are attached once it is created. */}
-            <div
-              {...(task && attach.zone)}
-              className={`${s.box} ${s.grow} ${task ? attach.zone.className : ""}`}
-            >
-              <textarea
-                className={`input inplace ${s.descIn}`}
-                aria-label={t("task.description")}
-                placeholder={t("task.descriptionPlaceholder")}
-                value={description}
-                maxLength={LIMITS.taskDescription}
-                onChange={(e) => setDescription(e.target.value)}
-                onPaste={task && attach.onPaste}
-              />
-              <Counter value={description} max={LIMITS.taskDescription} />
-              {task && attach.button}
-            </div>
-            {files}
-          </>
+          <Editor
+            className={s.editor}
+            head={
+              <>
+                <textarea
+                  ref={titleField}
+                  className={s.title}
+                  rows={1}
+                  aria-label={t("task.title")}
+                  aria-invalid={tried && !title.trim()}
+                  placeholder={t("task.titlePlaceholder")}
+                  value={title}
+                  maxLength={LIMITS.taskTitle}
+                  onChange={(e) => setTitle(e.target.value)}
+                  // A title is one line: Enter does not break it.
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.metaKey && !e.ctrlKey && e.preventDefault()
+                  }
+                />
+                {tried && !title.trim() ? (
+                  <span className="counter full">{t("task.titleRequired")}</span>
+                ) : (
+                  <Counter value={title} max={LIMITS.taskTitle} />
+                )}
+              </>
+            }
+            attach={task ? attach : undefined}
+            files={
+              task && (
+                <Files
+                  items={fileEdit.shown(descFiles)}
+                  uploads={descUploads}
+                  token={token}
+                  canRemove={(a) => a.author === me?.id || me?.role === "admin"}
+                  onRemove={fileEdit.hide}
+                  onRetry={uploads.retry}
+                  onDismiss={uploads.dismiss}
+                />
+              )
+            }
+            counter={<Counter value={description} max={LIMITS.taskDescription} />}
+            actions={
+              task && (
+                <>
+                  <Button size="sm" variant="ghost" disabled={sending} onClick={cancel}>
+                    {t("common.cancel")}
+                  </Button>
+                  <Button size="sm" variant="primary" disabled={sending} onClick={save}>
+                    {t("common.save")}
+                  </Button>
+                </>
+              )
+            }
+            onSubmit={save}
+            onCancel={task ? cancel : undefined}
+          >
+            <textarea
+              aria-label={t("task.description")}
+              placeholder={t("task.descriptionPlaceholder")}
+              value={description}
+              maxLength={LIMITS.taskDescription}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </Editor>
         ) : (
           <>
             <h3 className={s.title}>{v.title}</h3>
@@ -246,11 +307,7 @@ function TaskBody({
               </div>
             ) : (
               <>
-                <button
-                  type="button"
-                  className={`${s.descEmpty} inplace multi`}
-                  onClick={() => setEditing(true)}
-                >
+                <button type="button" className={s.addDesc} onClick={edit}>
                   {t("task.noDescription")}
                 </button>
                 {files}
@@ -479,7 +536,7 @@ export function WindowTools({
   isNew: boolean;
   busy: boolean;
   deleteLabel: string;
-  onEdit: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
   onCancel: () => void;
   onSave: () => void;
@@ -522,7 +579,14 @@ export function WindowTools({
       ) : (
         <Fragment key="view">
           {children}
-          <Button icon="pencil" className={s.pen} aria-label={t("common.edit")} onClick={onEdit} />
+          {onEdit && (
+            <Button
+              icon="pencil"
+              className={s.pen}
+              aria-label={t("common.edit")}
+              onClick={onEdit}
+            />
+          )}
           {onDelete && (
             <Button icon="trash" className={s.del} aria-label={deleteLabel} onClick={onDelete} />
           )}
