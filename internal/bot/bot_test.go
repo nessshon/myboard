@@ -240,6 +240,11 @@ func TestCommentNotifications(t *testing.T) {
 	if n := len(fake.texts("310000005")); n != 1 {
 		t.Fatalf("erin turned comments off but got %d messages, want only the assignment", n)
 	}
+
+	comment(daveTok, "")
+	if third := fake.waitFor(t, "310000001", 3)[2]; !strings.Contains(third, "<blockquote>📎 файл</blockquote>") {
+		t.Fatalf("a comment of files alone is not shown as one:\n%s", third)
+	}
 }
 
 func TestCommentQuote(t *testing.T) {

@@ -13,14 +13,14 @@ import (
 
 // texts are the words of the messages; "who" is a label, so no verb has to agree with anyone's gender.
 type texts struct {
-	assigned, added, comment, due, status, who string
-	statusTitle, statusName                    map[string]string
-	months                                     [12]string
+	assigned, added, comment, file, due, status, who string
+	statusTitle, statusName                          map[string]string
+	months                                           [12]string
 }
 
 var words = map[string]texts{
 	"ru": {
-		assigned: "Вам назначена задача", added: "Вас добавили в проект", comment: "Новый комментарий", due: "Срок:", status: "Статус:", who: "Кто:",
+		assigned: "Вам назначена задача", added: "Вас добавили в проект", comment: "Новый комментарий", file: "📎 файл", due: "Срок:", status: "Статус:", who: "Кто:",
 		statusTitle: map[string]string{
 			"backlog": "Задача перенесена в «Бэклог»", "todo": "Задача перенесена в «К работе»", "in_progress": "Задача взята в работу",
 			"done": "Задача выполнена", "cancelled": "Задача отменена",
@@ -31,7 +31,7 @@ var words = map[string]texts{
 		months: [12]string{"января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"},
 	},
 	"en": {
-		assigned: "You've been assigned a task", added: "You've been added to a project", comment: "New comment", due: "Due:", status: "Status:", who: "By:",
+		assigned: "You've been assigned a task", added: "You've been added to a project", comment: "New comment", file: "📎 file", due: "Due:", status: "Status:", who: "By:",
 		statusTitle: map[string]string{
 			"backlog": `Task moved to "Backlog"`, "todo": `Task moved to "Todo"`, "in_progress": "Task started",
 			"done": "Task done", "cancelled": "Task cancelled",
@@ -83,6 +83,10 @@ func commentMessage(lang, publicURL string, task, project *core.Record, by, body
 	quote := plain(body)
 	if quote == "" {
 		quote = strings.TrimSpace(body)
+	}
+	// Files come after the comment (internal/tasks/attachments.go), so there is no count to give yet.
+	if quote == "" {
+		quote = words[lang].file
 	}
 	lines = append(lines, "<blockquote>"+html.EscapeString(cut(quote, quoteLen))+"</blockquote>")
 	return message("💬", words[lang].comment, taskHead(publicURL, task, project), lines)
