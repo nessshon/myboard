@@ -94,6 +94,14 @@ export interface Reaction extends RecordModel {
   author: string;
   emoji: ReactionKey;
 }
+export interface Attachment extends RecordModel {
+  task: string;
+  comment: string;
+  file: string;
+  name: string;
+  size: number;
+  author: string;
+}
 export interface ApiToken extends RecordModel {
   name: string;
   hint: string;
@@ -310,6 +318,75 @@ export function useReactions(taskId: string, failed: () => void) {
   return [reactions, setReactions] as const;
 }
 
+export function useAttachments(taskId: string | undefined, failed: () => void) {
+  const [attachments, setAttachments] = useState<Attachment[] | null>(null);
+  useEffect(() => {
+    if (!taskId) return;
+    const stop = live(
+      "attachments",
+      pb.filter("task = {:id}", { id: taskId }),
+      "created",
+      setAttachments,
+      failed,
+    );
+    return () => {
+      stop();
+      setAttachments(null);
+    };
+  }, [taskId]);
+  return [attachments, setAttachments] as const;
+}
+
+// Files are protected: a link carries a file token, which lives 3 minutes (PocketBase's default), so a
+// fresh one is fetched every 2 while a task is open.
+export function useFileToken(on: boolean) {
+  const [token, setToken] = useState("");
+  useEffect(() => {
+    if (!on) return;
+    let alive = true;
+    const refresh = () =>
+      pb.files
+        .getToken()
+        .then((t) => alive && setToken(t))
+        .catch(() => {});
+    refresh();
+    const timer = setInterval(refresh, 120_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [on]);
+  return token;
+}
+
+// By the collection's name: the server lets only these file paths through (internal/guard).
+export const fileURL = (a: Attachment, token: string, query = "") =>
+  `/api/files/attachments/${a.id}/${encodeURIComponent(a.file)}?token=${token}${query}`;
+
+// The SDK sends with fetch, which cannot report upload progress; XMLHttpRequest can.
+export function uploadFile(
+  data: { task: string; comment?: string },
+  file: File,
+  onProgress: (share: number) => void,
+) {
+  return new Promise<Attachment>((resolve, reject) => {
+    const form = new FormData();
+    form.append("task", data.task);
+    if (data.comment) form.append("comment", data.comment);
+    form.append("file", file);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/collections/attachments/records");
+    xhr.setRequestHeader("Authorization", pb.authStore.token);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
+    xhr.onload = () =>
+      xhr.status === 200
+        ? resolve(JSON.parse(xhr.responseText))
+        : reject(new Error(`upload: ${xhr.status}`));
+    xhr.onerror = () => reject(new Error("upload: network"));
+    xhr.send(form);
+  });
+}
+
 export function useProjectData(projectId: string | undefined, failed: () => void) {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [notes, setNotes] = useState<Note[] | null>(null);
@@ -343,7 +420,8 @@ export function useProjectData(projectId: string | undefined, failed: () => void
   return { tasks, notes, labels, comments, setTasks, setNotes, setLabels, setComments };
 }
 
-type Writable = "projects" | "tasks" | "notes" | "labels" | "comments" | "reactions";
+type Writable =
+  "projects" | "tasks" | "notes" | "labels" | "comments" | "reactions" | "attachments";
 
 export const create = <T extends RecordModel>(
   collection: Writable,
@@ -398,7 +476,7 @@ export async function renumber(collection: "tasks" | "notes", ids: string[]) {
 export type Row = Task | Note;
 export type Setter<T> = Dispatch<SetStateAction<T[] | null>>;
 
-function put<T extends Row | Label | Comment | Reaction>(set: Setter<T>, row: T) {
+function put<T extends Row | Label | Comment | Reaction | Attachment>(set: Setter<T>, row: T) {
   set((rows) => rows && [...rows.filter((r) => r.id !== row.id), row]);
 }
 
@@ -435,8 +513,8 @@ export async function add<T extends Row | Label | Comment | Reaction>(
   }
 }
 
-export async function drop<T extends Row | Label | Comment | Reaction>(
-  collection: "tasks" | "notes" | "labels" | "comments" | "reactions",
+export async function drop<T extends Row | Label | Comment | Reaction | Attachment>(
+  collection: "tasks" | "notes" | "labels" | "comments" | "reactions" | "attachments",
   set: Setter<T>,
   old: T | undefined,
   fail: () => void,

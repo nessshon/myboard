@@ -3,6 +3,9 @@ import {
   PRIORITIES,
   STATUSES,
   isClosed,
+  useAttachments,
+  useFileToken,
+  useMe,
   type Comment,
   type Label,
   type Setter,
@@ -19,12 +22,14 @@ import { Button } from "./Button";
 import { Counter } from "./Counter";
 import { Dialog } from "./Dialog";
 import { Discussion } from "./Discussion";
+import { Files, pick, useAttach, useUploads } from "./Files";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
 import { Menu, MenuCheck } from "./Menu";
 import { PROJECT_COLORS } from "./ProjectBadge";
 import { ConfirmDialog } from "./ProjectDialogs";
 import { Select } from "./Select";
+import { toast } from "./Toast";
 import s from "./TaskDialog.module.css";
 
 export type TaskFields = Pick<
@@ -102,6 +107,13 @@ function TaskBody({
   const [tried, setTried] = useState(false);
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const me = useMe();
+  const [attachments, setAttachments] = useAttachments(task?.id, () =>
+    toast(t("common.loadFailed")),
+  );
+  const token = useFileToken(!!task);
+  const uploads = useUploads(setAttachments);
+  const attach = useAttach(attachFiles);
 
   const v = task ?? draft;
   const set = (patch: Partial<TaskFields>) =>
@@ -140,6 +152,25 @@ function TaskBody({
         : [...v.assignees, id],
     });
   const author = task && people.find((p) => p.id === task.author);
+
+  // A file under the description goes at once, as a comment does; it does not wait for "Save".
+  function attachFiles(files: File[]) {
+    if (!task || !files.length) return;
+    const all = pick(files, task.id, t);
+    all.filter((u) => u.reason).forEach((u) => toast(`${u.file.name}: ${u.reason}`));
+    uploads.send(all.filter((u) => !u.reason));
+  }
+  const files = task && (
+    <Files
+      items={(attachments ?? []).filter((a) => !a.comment)}
+      uploads={uploads.uploads.filter((u) => !u.comment)}
+      token={token}
+      canRemove={editing ? (a) => a.author === me?.id || me?.role === "admin" : undefined}
+      setAttachments={setAttachments}
+      onRetry={uploads.retry}
+      onDismiss={uploads.dismiss}
+    />
+  );
   const day = (timestamp: string) => formatDate(timestamp, lang);
   const chosen = labels.filter((l) => v.labels.includes(l.id));
   const toggle = (id: string) =>
@@ -183,7 +214,11 @@ function TaskBody({
                 <Counter value={title} max={LIMITS.taskTitle} />
               )}
             </div>
-            <div className={`${s.box} ${s.grow}`}>
+            {/* A new task has nowhere to keep a file yet: files are attached once it is created. */}
+            <div
+              {...(task && attach.zone)}
+              className={`${s.box} ${s.grow} ${task ? attach.zone.className : ""}`}
+            >
               <textarea
                 className={`input inplace ${s.descIn}`}
                 aria-label={t("task.description")}
@@ -191,9 +226,12 @@ function TaskBody({
                 value={description}
                 maxLength={LIMITS.taskDescription}
                 onChange={(e) => setDescription(e.target.value)}
+                onPaste={task && attach.onPaste}
               />
               <Counter value={description} max={LIMITS.taskDescription} />
+              {task && attach.button}
             </div>
+            {files}
           </>
         ) : (
           <>
@@ -201,15 +239,19 @@ function TaskBody({
             {v.description ? (
               <div className={s.desc}>
                 <Markdown text={v.description} />
+                {files}
               </div>
             ) : (
-              <button
-                type="button"
-                className={`${s.descEmpty} inplace multi`}
-                onClick={() => setEditing(true)}
-              >
-                {t("task.noDescription")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={`${s.descEmpty} inplace multi`}
+                  onClick={() => setEditing(true)}
+                >
+                  {t("task.noDescription")}
+                </button>
+                {files}
+              </>
             )}
           </>
         )}
@@ -394,6 +436,10 @@ function TaskBody({
             members={members}
             comments={comments}
             setComments={setComments}
+            attachments={attachments ?? []}
+            setAttachments={setAttachments}
+            uploads={uploads}
+            token={token}
           />
         </div>
       )}

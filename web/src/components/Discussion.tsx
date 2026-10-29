@@ -1,4 +1,11 @@
-import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type KeyboardEvent,
+} from "react";
 import {
   add,
   drop,
@@ -6,6 +13,7 @@ import {
   personName,
   useMe,
   useReactions,
+  type Attachment,
   type Comment,
   type ReactionKey,
   type Setter,
@@ -17,6 +25,7 @@ import { LIMITS } from "../limits";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
+import { Files, forget, pick, useAttach, type Upload, type useUploads } from "./Files";
 import { Icon } from "./Icon";
 import { Markdown, mentionOf, mentions } from "./Markdown";
 import { Menu, MenuItem } from "./Menu";
@@ -32,6 +41,10 @@ type Props = {
   members: User[];
   comments: Comment[];
   setComments: Setter<Comment>;
+  attachments: Attachment[];
+  setAttachments: Setter<Attachment>;
+  uploads: ReturnType<typeof useUploads>;
+  token: string;
 };
 
 const escapeRe = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -71,6 +84,7 @@ type FieldProps = {
   value: string;
   onChange: (value: string) => void;
   onKeyDown: (e: KeyboardEvent) => void;
+  onPaste?: (e: ClipboardEvent) => void;
   mentionable: User[];
   handle: (person: User) => string;
   picks: Map<string, string>;
@@ -82,6 +96,7 @@ function Field({
   value,
   onChange,
   onKeyDown,
+  onPaste,
   mentionable,
   handle,
   picks,
@@ -167,6 +182,7 @@ function Field({
         onSelect={(e) => track(e.currentTarget)}
         onBlur={() => setQuery(null)}
         onKeyDown={keyDown}
+        onPaste={onPaste}
       />
       {matches.length > 0 && (
         <ul id={listId} role="listbox" aria-label={t("comment.mention")} className={s.people}>
@@ -190,7 +206,17 @@ function Field({
   );
 }
 
-export function Discussion({ taskId, people, members, comments, setComments }: Props) {
+export function Discussion({
+  taskId,
+  people,
+  members,
+  comments,
+  setComments,
+  attachments,
+  setAttachments,
+  uploads,
+  token,
+}: Props) {
   const t = useT();
   const lang = useLang();
   const me = useMe();
@@ -200,6 +226,8 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
   const [editing, setEditing] = useState<Comment | null>(null);
   const [draft, setDraft] = useState("");
   const [deleting, setDeleting] = useState<Comment | null>(null);
+  const [picked, setPicked] = useState<Upload[]>([]);
+  const attach = useAttach(take);
   // Who was picked from the list in each field, by the name shown there.
   const sendPicks = useRef(new Map<string, string>());
   const editPicks = useRef(new Map<string, string>());
@@ -218,15 +246,53 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
     .filter((c) => c.task === taskId)
     .sort((a, b) => a.created.localeCompare(b.created));
 
+  const going = picked.filter((u) => u.state === "picked");
+  const filesOf = (comment: string) => attachments.filter((a) => a.comment === comment);
+
+  function take(files: File[]) {
+    let room = LIMITS.attachmentsPerComment - going.length;
+    const fresh = pick(files, taskId, t).map((u) => {
+      if (u.state !== "picked" || room-- > 0) return u;
+      forget(u);
+      const reason = t("file.tooMany", { count: LIMITS.attachmentsPerComment });
+      return { ...u, state: "refused" as const, reason, preview: undefined };
+    });
+    setPicked((p) => [...p, ...fresh]);
+  }
+
+  function unpick(key: string) {
+    setPicked((p) => {
+      p.filter((u) => u.key === key).forEach(forget);
+      return p.filter((u) => u.key !== key);
+    });
+  }
+
+  // The comment goes first and its files after it, so a file never hangs without its comment.
   async function send() {
     const body = toStored(text.trim(), sendPicks.current);
-    if (!body || busy) return;
+    if ((!body && !going.length) || busy) return;
     setBusy(true);
     const made = await add("comments", setComments, { task: taskId, body }, actionFailed);
     setBusy(false);
-    if (made) {
-      setText("");
-      sendPicks.current.clear();
+    if (!made) return;
+    setText("");
+    sendPicks.current.clear();
+    picked.filter((u) => u.state === "refused").forEach(forget);
+    setPicked([]);
+    if (!going.length) return;
+    const sent = await uploads.send(going, made.id);
+    if (!body && !sent) {
+      // A comment of files alone that got none of them says nothing: take it back, give the files back.
+      drop("comments", setComments, made, actionFailed);
+      uploads.dropAll(going.map((u) => u.key));
+      setPicked(
+        pick(
+          going.map((u) => u.file),
+          taskId,
+          t,
+        ),
+      );
+      toast(t("file.commentFailed"));
     }
   }
 
@@ -245,7 +311,7 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
 
   function save() {
     const body = toStored(draft.trim(), editPicks.current);
-    if (!editing || !body) return;
+    if (!editing || (!body && !filesOf(editing.id).length)) return;
     // Compared as shown: a renamed person changes the stored link text, not what was written.
     if (draft.trim() !== toShown(editing.body, people).text) {
       patch("comments", setComments, editing, { body }, failed);
@@ -324,14 +390,34 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
                   <Button size="sm" onClick={() => setEditing(null)}>
                     {t("common.cancel")}
                   </Button>
-                  <Button size="sm" variant="primary" disabled={!draft.trim()} onClick={save}>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={!draft.trim() && !filesOf(c.id).length}
+                    onClick={save}
+                  >
                     {t("common.save")}
                   </Button>
                 </div>
               </div>
             ) : (
+              c.body && (
+                <div className={s.body}>
+                  <Markdown text={c.body} people={people} />
+                </div>
+              )
+            )}
+            {(filesOf(c.id).length > 0 || uploads.uploads.some((u) => u.comment === c.id)) && (
               <div className={s.body}>
-                <Markdown text={c.body} people={people} />
+                <Files
+                  items={filesOf(c.id)}
+                  uploads={uploads.uploads.filter((u) => u.comment === c.id)}
+                  token={token}
+                  canRemove={editing?.id === c.id ? () => mine || me?.role === "admin" : undefined}
+                  setAttachments={setAttachments}
+                  onRetry={uploads.retry}
+                  onDismiss={uploads.dismiss}
+                />
               </div>
             )}
             {reactions && me && editing?.id !== c.id && (
@@ -346,21 +432,29 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
         );
       })}
       <div className={s.compose}>
-        <div className={s.box}>
+        <div {...attach.zone} className={`${s.box} ${attach.zone.className}`}>
           <Field
             value={text}
             onChange={setText}
             onKeyDown={keys(send)}
+            onPaste={attach.onPaste}
             mentionable={mentionable}
             handle={handle}
             picks={sendPicks.current}
             placeholder={t("comment.placeholder")}
           />
           <Counter value={text} max={LIMITS.comment} />
+          {attach.button}
         </div>
+        <Files items={[]} uploads={picked} token={token} onDismiss={unpick} />
         <div className={s.row}>
           <span className={s.hint}>{t("comment.hint")}</span>
-          <Button variant="primary" size="sm" disabled={!text.trim() || busy} onClick={send}>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={(!text.trim() && !going.length) || busy}
+            onClick={send}
+          >
             {t("comment.send")}
           </Button>
         </div>
@@ -368,7 +462,11 @@ export function Discussion({ taskId, people, members, comments, setComments }: P
       <ConfirmDialog
         open={!!deleting}
         title={t("comment.deleteTitle")}
-        text={t("common.cannotUndo")}
+        text={
+          deleting && filesOf(deleting.id).length
+            ? `${t("comment.deleteFiles", { count: filesOf(deleting.id).length })} ${t("common.cannotUndo")}`
+            : t("common.cannotUndo")
+        }
         confirm={t("common.delete")}
         onConfirm={() => {
           drop("comments", setComments, deleting ?? undefined, actionFailed);

@@ -10,4 +10,12 @@ export const LIMITS = {
   tokenName: 40,
   comment: 5000,
   assignees: 10,
+  attachmentSize: 50 * 1024 * 1024,
+  attachmentsPerComment: 10,
 } as const;
+
+// What a file picker offers; the server checks the content against attachmentTypes in internal/migrations.
+export const ATTACHMENT_EXTENSIONS = (
+  "png jpg jpeg gif webp heic heif pdf txt log md csv json docx xlsx pptx odt ods zip gz tgz " +
+  "mp4 mov webm mp3 wav m4a"
+).split(" ");

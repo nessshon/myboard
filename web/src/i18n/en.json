@@ -141,6 +141,10 @@
   "comment.actions": "Comment actions",
   "comment.deleteTitle": "Delete the comment?",
   "comment.mention": "Mention",
+  "comment.deleteFiles": {
+    "one": "Its {count} file goes too.",
+    "other": "Its {count} files go too."
+  },
   "reaction.add": "Add reaction",
   "status.backlog": "Backlog",
   "status.todo": "Todo",
@@ -221,5 +225,19 @@
     "other": "{count} open tasks"
   },
   "home.emptyAdmin": "No projects yet",
-  "home.emptyMember": "You are not in any project yet"
+  "home.emptyMember": "You are not in any project yet",
+  "file.attach": "Attach a file",
+  "file.delete": "Delete file",
+  "file.deleteTitle": "Delete the file “{name}”?",
+  "file.tooBig": "over {size} MB",
+  "file.badType": "type not allowed",
+  "file.tooMany": "{count} per comment at most",
+  "file.retry": "Retry",
+  "file.notSent": "not uploaded",
+  "file.commentFailed": "The files did not upload, so the comment was not sent.",
+  "file.open": "Open original",
+  "file.download": "Download",
+  "file.previous": "Previous",
+  "file.next": "Next",
+  "file.position": "{n} of {total}"
 }

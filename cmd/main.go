@@ -111,7 +111,8 @@ func contentSecurityPolicy(dist fs.FS) string {
 		"default-src 'self'",
 		"script-src " + scripts,
 		"style-src 'self' 'unsafe-inline'",
-		"img-src 'self' data: https:",
+		// blob: shows a picked picture before it is sent (web/src/components/Files.tsx).
+		"img-src 'self' data: blob: https:",
 		"connect-src 'self'",
 		"object-src 'none'",
 		"base-uri 'self'",

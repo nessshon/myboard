@@ -36,3 +36,13 @@ export function formatMoment(timestamp: string, lang: string) {
     minute: "2-digit",
   }).format(parseDate(timestamp));
 }
+
+export function formatSize(bytes: number, lang: string) {
+  const [value, unit] =
+    bytes < 1024 * 1024 ? [bytes / 1024, "kilobyte"] : [bytes / 1024 / 1024, "megabyte"];
+  return new Intl.NumberFormat(lang, {
+    style: "unit",
+    unit,
+    maximumFractionDigits: value < 10 ? 1 : 0,
+  }).format(Math.max(value, 0.1));
+}

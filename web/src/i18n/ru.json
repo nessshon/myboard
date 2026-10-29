@@ -147,6 +147,12 @@
   "comment.actions": "Действия с комментарием",
   "comment.deleteTitle": "Удалить комментарий?",
   "comment.mention": "Упомянуть",
+  "comment.deleteFiles": {
+    "one": "Вместе с ним удалится {count} файл.",
+    "few": "Вместе с ним удалятся {count} файла.",
+    "many": "Вместе с ним удалятся {count} файлов.",
+    "other": "Вместе с ним удалятся файлы: {count}."
+  },
   "reaction.add": "Добавить реакцию",
   "status.backlog": "Бэклог",
   "status.todo": "К работе",
@@ -229,5 +235,19 @@
     "other": "{count} открытой задачи"
   },
   "home.emptyAdmin": "Проектов пока нет",
-  "home.emptyMember": "Вас пока не добавили ни в один проект"
+  "home.emptyMember": "Вас пока не добавили ни в один проект",
+  "file.attach": "Приложить файл",
+  "file.delete": "Удалить файл",
+  "file.deleteTitle": "Удалить файл «{name}»?",
+  "file.tooBig": "больше {size} МБ",
+  "file.badType": "такой тип нельзя",
+  "file.tooMany": "не больше {count} в комментарии",
+  "file.retry": "Повторить",
+  "file.notSent": "не загрузился",
+  "file.commentFailed": "Файлы не загрузились, комментарий не отправлен.",
+  "file.open": "Открыть оригинал",
+  "file.download": "Скачать",
+  "file.previous": "Предыдущий",
+  "file.next": "Следующий",
+  "file.position": "{n} из {total}"
 }

@@ -57,7 +57,9 @@ func init() {
 			// 50 MB, as much as a Telegram bot sends as a file (core.telegram.org/bots/api#senddocument).
 			&core.FileField{
 				Name: "file", Required: true, MaxSelect: 1, MaxSize: 50 << 20, Protected: true,
-				Thumbs: []string{"0x192"}, MimeTypes: attachmentTypes,
+				// 96px high twice over; a picture taller than 3:4 is shown cut from the top, so it gets a thumb cut
+				// that way too, or a phone screenshot's ~90px-wide 0x192 is blurred (web/src/components/Files.tsx).
+				Thumbs: []string{"0x192", "144x192t"}, MimeTypes: attachmentTypes,
 			},
 			// Both set by the server from the uploaded file (internal/tasks/attachments.go).
 			&core.TextField{Name: "name", Required: true, Max: 255},
