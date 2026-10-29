@@ -37,7 +37,7 @@ docker run -d --name myboard --restart unless-stopped \
   ghcr.io/nessshon/myboard
 ```
 
-- **Proxy** — HTTPS in front of `127.0.0.1:8090`, passing `X-Real-IP` (nginx: `proxy_set_header X-Real-IP $remote_addr;`)
+- **Proxy** — HTTPS in front of `127.0.0.1:8090`, passing `X-Real-IP` (nginx: `proxy_set_header X-Real-IP $remote_addr;`) and letting files of up to 50 MB through (nginx: `client_max_body_size 60m;`, with request buffering left on)
 - **People** — sign in as the owner, add the others on the **Users** page
 
 To update, pull the image and recreate the container; the data stays in the `myboard-data` volume:

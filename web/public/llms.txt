@@ -28,13 +28,19 @@ Each collection is at `$MB/api/collections/<name>/records`.
 - `id`, `project` (fixed), `title` (1–120), `body` (Markdown, ≤50000), `shared` (bool; only the author or an admin may change it), `position`, `author` (set by the server, fixed), `edited` (as on a task).
 
 **comments** — the discussion under a task; read and write for members of the task's project and admins.
-- `id`, `task` (task id, fixed), `body` (Markdown, 1–5000, not blank), `author` (set by the server, fixed), `created`, `updated`.
+- `id`, `task` (task id, fixed), `body` (Markdown, ≤5000; empty only for a comment of files alone, never just spaces), `author` (set by the server, fixed), `created`, `updated`.
 - Only the author edits a comment; the author or an admin deletes it. Deleting a task deletes its comments.
 - To mention someone who sees the task (a project member or an admin), write `[@Name](user:USER_ID)`: they get notified, and the site shows their current name.
 
 **reactions** — emoji under a comment; read and add for members of the comment's task's project and admins.
 - `id`, `comment` (comment id), `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥), `created`.
 - One of each kind per person and comment: the same again answers 400. A reaction cannot be changed; only its author removes it. Nobody is notified.
+
+**attachments** — files under a task's description or in a comment; read and add for members of the task's project and admins.
+- `id`, `task` (task id), `comment` (comment id; empty for the description), `file` (the stored name), `name` (the name it came with), `size` (bytes), `author` (the last three set by the server), `created`.
+- Up to 50 MB each: pictures, PDF, text and logs, CSV, JSON, office documents, archives, video and audio. The server tells the type by the content; HTML, SVG and programs answer 400.
+- Only a comment's author adds files to it. A file cannot be changed; whoever uploaded it or an admin deletes it. Deleting a comment or a task deletes its files.
+- Files are protected: a link to one carries a file token that lives 3 minutes (see Recipes).
 
 **users** — read for anyone signed in; managed in the web app.
 - `id`, `name`, `username` (Telegram), `role` (`admin` or `member`), `deleted` (bool).
@@ -135,6 +141,14 @@ React to a comment, and take the reaction back:
 curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collections/reactions/records" \
   -d '{"comment":"COMMENT_ID","emoji":"+1"}'
 curl -s "${auth[@]}" -X DELETE "$MB/api/collections/reactions/records/REACTION_ID"
+```
+
+Attach a file to a task's description (add `-F comment=COMMENT_ID` for a comment of yours), then download one:
+
+```sh
+curl -s "${auth[@]}" -X POST "$MB/api/collections/attachments/records" -F task=TASK_ID -F file=@screenshot.png
+FILE_TOKEN=$(curl -s "${auth[@]}" -X POST "$MB/api/files/token" | jq -r .token)
+curl -s -o report.pdf "$MB/api/files/attachments/ATTACHMENT_ID/STORED_FILE_NAME?token=$FILE_TOKEN"
 ```
 
 Delete a task: `curl -s "${auth[@]}" -X DELETE "$MB/api/collections/tasks/records/TASK_ID"` (answers 204, cannot be undone).
