@@ -160,13 +160,19 @@ export function useFileEdit(setAttachments: Setter<Attachment>, fail: () => void
   };
 }
 
+// A picture dragged within this page comes along as a file too (Chrome, Safari), and dropped back it
+// would be uploaded again; only files from outside the page are new.
+let draggingHere = false;
+addEventListener("dragstart", () => (draggingHere = true));
+addEventListener("dragend", () => (draggingHere = false));
+
 // A field files can be dropped or pasted into, and its paperclip. Only files are taken: text dragged or
 // pasted in stays the field's business.
 export function useAttach(onFiles: (files: File[]) => void) {
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const t = useT();
-  const hasFiles = (e: DragEvent) => e.dataTransfer.types.includes("Files");
+  const hasFiles = (e: DragEvent) => !draggingHere && e.dataTransfer.types.includes("Files");
   return {
     zone: {
       className: `${s.attachable} ${over ? s.over : ""}`,
