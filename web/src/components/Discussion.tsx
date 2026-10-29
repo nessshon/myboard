@@ -236,7 +236,7 @@ export function Discussion({
   const handle = (person: User) => handleOf(person, people);
   const failed = () => toast(t("common.saveFailed"));
   const actionFailed = () => toast(t("common.actionFailed"));
-  const fileEdit = useFileEdit(setAttachments, me?.id, actionFailed);
+  const fileEdit = useFileEdit(setAttachments, actionFailed);
   const editAttach = useAttach(addToEdited);
   const [reactions, setReactions] = useReactions(taskId, () => toast(t("common.loadFailed")));
   // A second tap before the server answers would add the same reaction twice and be refused.
@@ -282,7 +282,7 @@ export function Discussion({
     setPicked([]);
     if (!going.length) return;
     const sent = await uploads.send(going, made.id);
-    if (!body && !sent) {
+    if (!body && !sent.length) {
       // A comment of files alone that got none of them says nothing: take it back, give the files back.
       drop("comments", setComments, made, actionFailed);
       uploads.dropAll(going.map((u) => u.key));
@@ -314,7 +314,7 @@ export function Discussion({
     const shown = toShown(c.body, people);
     editPicks.current = shown.picks;
     setDraft(shown.text);
-    fileEdit.begin(filesOf(c.id));
+    fileEdit.begin();
     setEditing(c);
   }
 
@@ -334,7 +334,7 @@ export function Discussion({
         toast(`${u.file.name}: ${t("file.tooMany", { count: LIMITS.attachmentsPerComment })}`);
       }
     }
-    uploads.send(fresh, editing.id);
+    fileEdit.track(uploads.send(fresh, editing.id));
   }
 
   function save() {
@@ -346,20 +346,19 @@ export function Discussion({
     if (draft.trim() !== toShown(editing.body, people).text) {
       patch("comments", setComments, editing, { body }, failed);
     }
-    fileEdit.save(files);
+    fileEdit.save();
     setEditing(null);
   }
 
   function cancel() {
-    if (!editing || sending(editing.id)) return;
-    fileEdit.cancel(filesOf(editing.id));
+    if (!editing) return;
+    fileEdit.cancel();
     uploadsOf(editing.id).forEach((u) => uploads.dismiss(u.key));
     setEditing(null);
   }
 
   const changed =
-    !!editing &&
-    (draft.trim() !== toShown(editing.body, people).text || fileEdit.changed(filesOf(editing.id)));
+    !!editing && (draft.trim() !== toShown(editing.body, people).text || fileEdit.changed);
   useEffect(() => {
     pending.current = { unsaved: changed || !!text.trim() || going.length > 0, discard: cancel };
   });
@@ -418,7 +417,7 @@ export function Discussion({
                 counter={<Counter value={draft} max={LIMITS.comment} />}
                 actions={
                   <>
-                    <Button size="sm" variant="ghost" disabled={sending(c.id)} onClick={cancel}>
+                    <Button size="sm" variant="ghost" onClick={cancel}>
                       {t("common.cancel")}
                     </Button>
                     <Button
@@ -491,7 +490,6 @@ export function Discussion({
           </Button>
         }
         onSubmit={send}
-        dirty={!!text.trim() || going.length > 0}
       >
         <Field
           value={text}

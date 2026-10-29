@@ -55,7 +55,7 @@ const PARALLEL = 1;
 export function useUploads(setAttachments: Setter<Attachment>) {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const running = useRef(0);
-  const waiting = useRef<{ upload: Upload; done: (sent: boolean) => void }[]>([]);
+  const waiting = useRef<{ upload: Upload; done: (row?: Attachment) => void }[]>([]);
   const change = (key: string, patch: Partial<Upload>) =>
     setUploads((us) => us.map((u) => (u.key === key ? { ...u, ...patch } : u)));
 
@@ -68,11 +68,11 @@ export function useUploads(setAttachments: Setter<Attachment>) {
           setAttachments((rows) => rows && [...rows.filter((r) => r.id !== row.id), row]);
           setUploads((us) => us.filter((x) => x.key !== u.key));
           forget(u);
-          done(true);
+          done(row);
         })
         .catch(() => {
           change(u.key, { state: "failed", share: 0 });
-          done(false);
+          done();
         })
         .finally(() => {
           running.current--;
@@ -82,18 +82,18 @@ export function useUploads(setAttachments: Setter<Attachment>) {
   }
 
   function enqueue(u: Upload) {
-    return new Promise<boolean>((done) => {
+    return new Promise<Attachment | undefined>((done) => {
       waiting.current.push({ upload: u, done });
       next();
     });
   }
 
-  // Resolves to how many arrived.
+  // Resolves to the rows that arrived.
   async function send(picked: Upload[], comment = "") {
     const batch = picked.map((u) => ({ ...u, comment, state: "sending" as const, share: 0 }));
     setUploads((us) => [...us, ...batch]);
     const sent = await Promise.all(batch.map(enqueue));
-    return sent.filter(Boolean).length;
+    return sent.filter((a) => a !== undefined);
   }
 
   function retry(key: string) {
@@ -122,31 +122,40 @@ export function useUploads(setAttachments: Setter<Attachment>) {
 
 // Files changed together with the text around them. A file added while editing is kept at once, so
 // others may see it before Save, and Cancel deletes it again; a removed one is only hidden until Save.
-export function useFileEdit(
-  setAttachments: Setter<Attachment>,
-  me: string | undefined,
-  fail: () => void,
-) {
-  const [before, setBefore] = useState(new Set<string>());
-  const [hidden, setHidden] = useState<string[]>([]);
-  const added = (items: Attachment[]) => items.filter((a) => !before.has(a.id) && a.author === me);
+export function useFileEdit(setAttachments: Setter<Attachment>, fail: () => void) {
+  const [added, setAdded] = useState<Attachment[]>([]);
+  const [hidden, setHidden] = useState<Attachment[]>([]);
+  const [waiting, setWaiting] = useState(0);
+  // Each edit is a round; a file that lands after its round ended was cancelled with it.
+  const round = useRef(0);
+  const remove = (rows: Attachment[]) =>
+    rows.forEach((a) => drop("attachments", setAttachments, a, fail));
+  function next() {
+    round.current++;
+    setAdded([]);
+    setHidden([]);
+  }
   return {
-    begin(items: Attachment[]) {
-      setBefore(new Set(items.map((a) => a.id)));
-      setHidden([]);
+    begin: next,
+    track(sent: Promise<Attachment[]>) {
+      const mine = round.current;
+      setWaiting((n) => n + 1);
+      sent.then((rows) => {
+        setWaiting((n) => n - 1);
+        if (mine === round.current) setAdded((a) => [...a, ...rows]);
+        else remove(rows);
+      });
     },
-    shown: (items: Attachment[]) => items.filter((a) => !hidden.includes(a.id)),
-    hide: (a: Attachment) => setHidden((h) => [...h, a.id]),
-    changed: (items: Attachment[]) => hidden.length > 0 || added(items).length > 0,
-    save(items: Attachment[]) {
-      items
-        .filter((a) => hidden.includes(a.id))
-        .forEach((a) => drop("attachments", setAttachments, a, fail));
-      setHidden([]);
+    shown: (items: Attachment[]) => items.filter((a) => !hidden.some((h) => h.id === a.id)),
+    hide: (a: Attachment) => setHidden((h) => [...h, a]),
+    changed: added.length > 0 || hidden.length > 0 || waiting > 0,
+    save() {
+      remove(hidden);
+      next();
     },
-    cancel(items: Attachment[]) {
-      added(items).forEach((a) => drop("attachments", setAttachments, a, fail));
-      setHidden([]);
+    cancel() {
+      remove(added);
+      next();
     },
   };
 }
@@ -261,7 +270,10 @@ export function Files({
         title={t("file.delete")}
         onClick={(e) => {
           // The button goes with the file; the keyboard stays in the editor it was in.
-          e.currentTarget.closest("[data-editor]")?.querySelector("textarea")?.focus();
+          e.currentTarget
+            .closest("[data-editor]")
+            ?.querySelector<HTMLElement>("[data-text] textarea")
+            ?.focus();
           onRemove?.(a);
         }}
       >

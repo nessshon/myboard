@@ -11,8 +11,6 @@ type Props = {
   actions?: ReactNode;
   onSubmit: () => void;
   onCancel?: () => void;
-  // Text typed with nowhere to cancel to: Esc then only keeps the window from closing over it.
-  dirty?: boolean;
   className?: string;
 };
 
@@ -26,7 +24,6 @@ export function Editor({
   actions,
   onSubmit,
   onCancel,
-  dirty,
   className,
 }: Props) {
   // A key the mention list took is already handled.
@@ -36,9 +33,9 @@ export function Editor({
       e.preventDefault();
       onSubmit();
     }
-    if (e.key === "Escape" && (onCancel || dirty)) {
+    if (e.key === "Escape" && onCancel) {
       e.preventDefault();
-      onCancel?.();
+      onCancel();
     }
   }
 
@@ -51,7 +48,9 @@ export function Editor({
       onPaste={attach?.onPaste}
     >
       {head && <div className={s.head}>{head}</div>}
-      <div className={s.text}>{children}</div>
+      <div className={s.text} data-text>
+        {children}
+      </div>
       {files && <div className={s.files}>{files}</div>}
       {(attach || counter || actions) && (
         <div className={s.bar}>

@@ -125,7 +125,7 @@ function TaskBody({
   const token = useFileToken(!!task);
   const uploads = useUploads(setAttachments);
   const attach = useAttach(attachFiles);
-  const fileEdit = useFileEdit(setAttachments, me?.id, () => toast(t("common.actionFailed")));
+  const fileEdit = useFileEdit(setAttachments, () => toast(t("common.actionFailed")));
   const descFiles = (attachments ?? []).filter((a) => !a.comment);
   const descUploads = uploads.uploads.filter((u) => !u.comment);
   const sending = descUploads.some((u) => u.state === "sending");
@@ -139,7 +139,7 @@ function TaskBody({
     setTitle(task.title);
     setDescription(task.description);
     setTried(false);
-    fileEdit.begin(descFiles);
+    fileEdit.begin();
     setEditing(true);
   }
 
@@ -162,13 +162,11 @@ function TaskBody({
     }
     setEditing(false);
     onPatch({ title: title.trim(), description });
-    fileEdit.save(descFiles);
+    fileEdit.save();
   }
 
   function cancel() {
-    if (!task) return close();
-    if (sending) return;
-    fileEdit.cancel(descFiles);
+    fileEdit.cancel();
     descUploads.forEach((u) => uploads.dismiss(u.key));
     setTried(false);
     setEditing(false);
@@ -177,7 +175,7 @@ function TaskBody({
   const changed =
     editing &&
     (task
-      ? title !== task.title || description !== task.description || fileEdit.changed(descFiles)
+      ? title !== task.title || description !== task.description || fileEdit.changed
       : !!title.trim() || !!description.trim() || picked.length > 0);
   const unsaved = () => changed || thread.current.unsaved;
   const ask = (then: () => void) => setLeaving(() => then);
@@ -244,7 +242,7 @@ function TaskBody({
     const all = pick(files, task?.id ?? "", t);
     all.filter((u) => u.reason).forEach((u) => toast(`${u.file.name}: ${u.reason}`));
     const fit = all.filter((u) => !u.reason);
-    if (task) uploads.send(fit);
+    if (task) fileEdit.track(uploads.send(fit));
     else setPicked((p) => [...p, ...fit]);
   }
 
@@ -275,7 +273,6 @@ function TaskBody({
         isNew={!task}
         busy={busy}
         deleteLabel={t("task.delete")}
-        onCancel={cancel}
         onSave={save}
         onClose={close}
       >
@@ -342,7 +339,7 @@ function TaskBody({
             actions={
               task && (
                 <>
-                  <Button size="sm" variant="ghost" disabled={sending} onClick={cancel}>
+                  <Button size="sm" variant="ghost" onClick={cancel}>
                     {t("common.cancel")}
                   </Button>
                   <Button size="sm" variant="primary" disabled={sending} onClick={save}>
@@ -615,7 +612,7 @@ export function WindowTools({
   deleteLabel: string;
   onEdit?: () => void;
   onDelete?: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   onSave: () => void;
   onClose: () => void;
   children?: ReactNode;
@@ -631,7 +628,7 @@ export function WindowTools({
     if (isNew || !editing || !dialog) return;
     const cancel = (e: Event) => {
       e.preventDefault();
-      onCancel();
+      onCancel?.();
     };
     dialog.addEventListener("cancel", cancel);
     return () => dialog.removeEventListener("cancel", cancel);
