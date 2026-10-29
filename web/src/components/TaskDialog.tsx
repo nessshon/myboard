@@ -12,6 +12,7 @@ import {
   type Task,
   type User,
   personName,
+  uploadFile,
 } from "../api";
 import { formatDate, formatDue, isOverdue } from "../format";
 import { useLang, useT } from "../i18n";
@@ -23,7 +24,7 @@ import { Counter } from "./Counter";
 import { Dialog } from "./Dialog";
 import { Discussion } from "./Discussion";
 import { Editor } from "./Editor";
-import { Files, pick, useAttach, useFileEdit, useUploads } from "./Files";
+import { Files, forget, pick, useAttach, useFileEdit, useUploads, type Upload } from "./Files";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
 import { Menu, MenuCheck, MenuItem } from "./Menu";
@@ -57,7 +58,7 @@ type Props = {
   people: User[];
   onClose: () => void;
   onPatch: (patch: Partial<TaskFields>) => void;
-  onCreate?: (fields: TaskFields) => Promise<void> | void;
+  onCreate?: (fields: TaskFields) => Promise<Task | undefined>;
   onDelete: () => void;
   onCreateLabel: (name: string, color: string) => Promise<Label | undefined>;
   comments: Comment[] | null;
@@ -109,6 +110,7 @@ function TaskBody({
   const [tried, setTried] = useState(false);
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [picked, setPicked] = useState<Upload[]>([]);
   const me = useMe();
   const main = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLTextAreaElement>(null);
@@ -141,8 +143,16 @@ function TaskBody({
     if (!title.trim() || busy || sending) return;
     if (!task) {
       setBusy(true);
-      await onCreate?.({ ...draft, title: title.trim(), description });
+      const made = await onCreate?.({ ...draft, title: title.trim(), description });
       setBusy(false);
+      if (!made) return;
+      // This window is gone by now: the task's own window shows each file as it lands.
+      for (const u of picked) {
+        await uploadFile({ task: made.id }, u.file, () => {}).catch(() =>
+          toast(`${u.file.name}: ${t("file.notSent")}`),
+        );
+        forget(u);
+      }
       return;
     }
     setEditing(false);
@@ -185,11 +195,20 @@ function TaskBody({
     });
   const author = task && people.find((p) => p.id === task.author);
 
+  // A new task has nowhere to keep a file yet: its files wait here until it is created.
   function attachFiles(files: File[]) {
-    if (!task || !files.length) return;
-    const all = pick(files, task.id, t);
+    const all = pick(files, task?.id ?? "", t);
     all.filter((u) => u.reason).forEach((u) => toast(`${u.file.name}: ${u.reason}`));
-    uploads.send(all.filter((u) => !u.reason));
+    const fit = all.filter((u) => !u.reason);
+    if (task) uploads.send(fit);
+    else setPicked((p) => [...p, ...fit]);
+  }
+
+  function unpick(key: string) {
+    setPicked((p) => {
+      p.filter((u) => u.key === key).forEach(forget);
+      return p.filter((u) => u.key !== key);
+    });
   }
   const files = task && (
     <Files
@@ -259,9 +278,9 @@ function TaskBody({
                 )}
               </>
             }
-            attach={task ? attach : undefined}
+            attach={attach}
             files={
-              task && (
+              task ? (
                 <Files
                   items={fileEdit.shown(descFiles)}
                   uploads={descUploads}
@@ -271,6 +290,8 @@ function TaskBody({
                   onRetry={uploads.retry}
                   onDismiss={uploads.dismiss}
                 />
+              ) : (
+                <Files items={[]} uploads={picked} token={token} onDismiss={unpick} />
               )
             }
             counter={<Counter value={description} max={LIMITS.taskDescription} />}

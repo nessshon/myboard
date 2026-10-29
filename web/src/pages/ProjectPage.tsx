@@ -177,6 +177,7 @@ export function ProjectPage({
     if (!row) return;
     setCreating(false);
     navigate(`${base}/${row.number}`);
+    return row;
   }
 
   const createNote = (draft: { title: string; body: string }) =>
