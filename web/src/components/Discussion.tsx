@@ -102,6 +102,7 @@ type FieldProps = {
   picks: Map<string, string>;
   placeholder?: string;
   autoFocus?: boolean;
+  readOnly?: boolean;
 };
 
 function Field({
@@ -112,6 +113,7 @@ function Field({
   picks,
   placeholder,
   autoFocus,
+  readOnly,
 }: FieldProps) {
   const t = useT();
   const listId = useId();
@@ -180,6 +182,7 @@ function Field({
         value={value}
         maxLength={LIMITS.comment}
         autoFocus={autoFocus}
+        readOnly={readOnly}
         onChange={(e) => {
           onChange(e.target.value);
           track(e.currentTarget);
@@ -280,21 +283,24 @@ export function Discussion({
     if (!made) return;
     setText("");
     sendPicks.current.clear();
+    // Files picked while it was on its way stay for the next comment.
+    const sentKeys = new Set(picked.map((u) => u.key));
     picked.filter((u) => u.state === "refused").forEach(forget);
-    setPicked([]);
+    setPicked((p) => p.filter((u) => !sentKeys.has(u.key)));
     if (!going.length) return;
     const sent = await uploads.send(going, made.id);
     if (!body && !sent.length) {
       // A comment of files alone that got none of them says nothing: take it back, give the files back.
       drop("comments", setComments, made, actionFailed);
       uploads.dropAll(going.map((u) => u.key));
-      setPicked(
-        pick(
+      setPicked((p) => [
+        ...pick(
           going.map((u) => u.file),
           taskId,
           t,
         ),
-      );
+        ...p,
+      ]);
       toast(t("file.commentFailed"));
     }
   }
@@ -316,7 +322,7 @@ export function Discussion({
     const shown = toShown(c.body, people);
     editPicks.current = shown.picks;
     setDraft(shown.text);
-    fileEdit.begin();
+    fileEdit.begin(uploadsOf(c.id));
     setEditing(c);
   }
 
@@ -355,7 +361,9 @@ export function Discussion({
   function cancel() {
     if (!editing) return;
     fileEdit.cancel();
-    uploadsOf(editing.id).forEach((u) => uploads.dismiss(u.key));
+    uploadsOf(editing.id)
+      .filter(fileEdit.own)
+      .forEach((u) => uploads.dismiss(u.key));
     setEditing(null);
   }
 
@@ -391,7 +399,8 @@ export function Discussion({
                 triggerClass={s.more}
                 trigger={<Icon name="more" size={16} />}
               >
-                {mine && (
+                {/* One comment at a time: starting another would drop this one's changes unasked. */}
+                {mine && !editing && (
                   <MenuItem icon="pencil" onClick={() => startEdit(c)}>
                     {t("common.edit")}
                   </MenuItem>
@@ -412,7 +421,7 @@ export function Discussion({
                     token={token}
                     canRemove={() => true}
                     onRemove={fileEdit.hide}
-                    onRetry={uploads.retry}
+                    onRetry={(key) => fileEdit.retried(key, uploads.retry(key))}
                     onDismiss={uploads.dismiss}
                   />
                 }
@@ -507,6 +516,7 @@ export function Discussion({
           handle={handle}
           picks={sendPicks.current}
           placeholder={t("comment.placeholder")}
+          readOnly={busy}
         />
       </Editor>
       <ConfirmDialog

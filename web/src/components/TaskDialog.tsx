@@ -148,7 +148,7 @@ function TaskBody({
     setTitle(task.title);
     setDescription(task.description);
     setTried(false);
-    fileEdit.begin();
+    fileEdit.begin(descUploads);
     setEditing(true);
   }
 
@@ -176,7 +176,7 @@ function TaskBody({
 
   function cancel() {
     fileEdit.cancel();
-    descUploads.forEach((u) => uploads.dismiss(u.key));
+    descUploads.filter(fileEdit.own).forEach((u) => uploads.dismiss(u.key));
     setTried(false);
     setEditing(false);
   }
@@ -290,7 +290,7 @@ function TaskBody({
                   token={token}
                   canRemove={(a) => a.author === me?.id || me?.role === "admin"}
                   onRemove={fileEdit.hide}
-                  onRetry={uploads.retry}
+                  onRetry={(key) => fileEdit.retried(key, uploads.retry(key))}
                   onDismiss={uploads.dismiss}
                 />
               ) : (

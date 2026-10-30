@@ -102,11 +102,13 @@ export function useUploads(setAttachments: Setter<Attachment>) {
     return sent.filter((a) => a !== undefined);
   }
 
-  function retry(key: string) {
+  // Resolves like send, so an edit can count a file sent again as its own.
+  async function retry(key: string) {
     const u = uploads.find((x) => x.key === key);
-    if (!u) return;
+    if (!u) return [];
     change(key, { state: "sending", share: 0 });
-    enqueue(u);
+    const row = await enqueue(u);
+    return row ? [row] : [];
   }
 
   function dismiss(key: string) {
@@ -134,23 +136,39 @@ export function useFileEdit(setAttachments: Setter<Attachment>, fail: () => void
   const [waiting, setWaiting] = useState(0);
   // Each edit is a round; a file that lands after its round ended was cancelled with it.
   const round = useRef(0);
+  // Cancel may come from a render before the last file landed (a question about discarding was open), so it
+  // reads the files from here, not from that render's state.
+  const landed = useRef<Attachment[]>([]);
+  // Uploads already there when the edit began are not its own: Cancel leaves them, a failed one keeps its Retry.
+  const before = useRef(new Set<string>());
   const remove = (rows: Attachment[]) =>
     rows.forEach((a) => drop("attachments", setAttachments, a, fail));
   function next() {
     round.current++;
+    landed.current = [];
     setAdded([]);
     setHidden([]);
+    setWaiting(0);
+  }
+  function track(sent: Promise<Attachment[]>) {
+    const mine = round.current;
+    setWaiting((n) => n + 1);
+    sent.then((rows) => {
+      if (mine !== round.current) return remove(rows);
+      setWaiting((n) => n - 1);
+      landed.current = [...landed.current, ...rows];
+      setAdded(landed.current);
+    });
   }
   return {
-    begin: next,
-    track(sent: Promise<Attachment[]>) {
-      const mine = round.current;
-      setWaiting((n) => n + 1);
-      sent.then((rows) => {
-        setWaiting((n) => n - 1);
-        if (mine === round.current) setAdded((a) => [...a, ...rows]);
-        else remove(rows);
-      });
+    begin(existing: Upload[]) {
+      before.current = new Set(existing.map((u) => u.key));
+      next();
+    },
+    track,
+    own: (u: Upload) => !before.current.has(u.key),
+    retried(key: string, sent: Promise<Attachment[]>) {
+      if (!before.current.has(key)) track(sent);
     },
     shown: (items: Attachment[]) => items.filter((a) => !hidden.some((h) => h.id === a.id)),
     hide: (a: Attachment) => setHidden((h) => [...h, a]),
@@ -160,7 +178,7 @@ export function useFileEdit(setAttachments: Setter<Attachment>, fail: () => void
       next();
     },
     cancel() {
-      remove(added);
+      remove(landed.current);
       next();
     },
   };
@@ -250,7 +268,8 @@ export function Files({
 }: Props) {
   const t = useT();
   const lang = useLang();
-  const [viewing, setViewing] = useState<number | null>(null);
+  // By id: a file someone else removes meanwhile must not hand its place to the next one.
+  const [viewing, setViewing] = useState<string | null>(null);
   // A thumb keeps the link it was first loaded by: a new token would make the browser fetch it again.
   const thumbs = useRef(new Map<string, string>());
   const thumbOf = (a: Attachment) => {
@@ -267,6 +286,7 @@ export function Files({
     redraw((n) => n + 1);
   };
   const viewable = items.filter((a) => isImage(a.name) || isVideo(a.name));
+  const at = viewable.findIndex((a) => a.id === viewing);
   const pictures = items.filter((a) => isImage(a.name));
   const others = items.filter((a) => !isImage(a.name));
   const localPictures = uploads.filter((u) => u.preview);
@@ -315,7 +335,7 @@ export function Files({
                 type="button"
                 className={s.open}
                 title={a.name}
-                onClick={() => setViewing(viewable.indexOf(a))}
+                onClick={() => setViewing(a.id)}
               >
                 {thumbOf(a) ? (
                   <img src={thumbOf(a)} alt={a.name} onLoad={(e) => tall(a, e.currentTarget)} />
@@ -372,7 +392,7 @@ export function Files({
                     type="button"
                     className={s.label}
                     title={a.name}
-                    onClick={() => setViewing(viewable.indexOf(a))}
+                    onClick={() => setViewing(a.id)}
                   >
                     {label}
                   </button>
@@ -423,12 +443,12 @@ export function Files({
           ))}
         </div>
       )}
-      {viewing !== null && viewable[viewing] && (
+      {at >= 0 && (
         <Viewer
           items={viewable}
-          index={viewing}
+          index={at}
           token={token}
-          onIndex={setViewing}
+          onIndex={(i) => setViewing(viewable[i].id)}
           onClose={() => setViewing(null)}
         />
       )}
