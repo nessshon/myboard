@@ -26,6 +26,20 @@
   border-color: var(--border-strong);
 }
 
+/* A field in a panel reads as a row: no frame, a background under a mouse. :where keeps the keyboard's
+   focus frame from theme.css the stronger rule. */
+:where(.plain) .select {
+  border-color: transparent;
+  background: transparent;
+}
+
+@media (hover: hover) {
+  :where(.plain) .select:hover:not(:focus-visible) {
+    border-color: transparent;
+    background: var(--hover);
+  }
+}
+
 .chev {
   justify-self: end;
   margin-right: 8px;

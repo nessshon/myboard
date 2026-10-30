@@ -361,6 +361,7 @@ function TaskBody({
               <StatusDot status={v.status} />
             </span>
             <Select
+              plain
               id="task-status"
               value={v.status}
               onChange={(e) => set({ status: e.target.value as Task["status"] })}
@@ -380,6 +381,7 @@ function TaskBody({
               <span className={`${s.bar} ${s[v.priority]}`} />
             </span>
             <Select
+              plain
               id="task-priority"
               value={v.priority}
               onChange={(e) => set({ priority: e.target.value as Task["priority"] })}

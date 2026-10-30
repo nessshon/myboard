@@ -60,6 +60,7 @@
 .arrow:hover {
   color: var(--text);
   border-color: var(--border-strong);
+  background: var(--hover);
 }
 
 .left {

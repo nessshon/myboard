@@ -109,6 +109,7 @@ export function AppShell(p: Props) {
   }, [drawer]);
 
   const swipe = useRef<{ x: number; y: number; t: number; dx: number; axis?: "x" | "y" }>(null);
+  const pressedOutside = useRef(false);
 
   // With many projects the open one can sit below the fold of the list; bring it into view. Only when
   // the open page changes or the list first arrives: App replaces the array on every live update, and
@@ -277,7 +278,9 @@ export function AppShell(p: Props) {
           e.preventDefault();
           setDrawer(false);
         }}
-        onClick={(e) => e.target === e.currentTarget && setDrawer(false)}
+        // As in Dialog: a text selection dragged out onto the backdrop is not a tap beside the menu.
+        onPointerDown={(e) => (pressedOutside.current = e.target === e.currentTarget)}
+        onClick={(e) => e.target === e.currentTarget && pressedOutside.current && setDrawer(false)}
         onTouchStart={(e) => {
           const p = e.touches[0];
           swipe.current = { x: p.clientX, y: p.clientY, t: e.timeStamp, dx: 0 };

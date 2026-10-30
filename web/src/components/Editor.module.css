@@ -35,10 +35,6 @@
   overflow-wrap: anywhere;
 }
 
-.frame textarea:focus {
-  box-shadow: none;
-}
-
 .text textarea {
   min-height: calc(2 * 14px * 1.7 + 20px);
   max-height: 60vh;

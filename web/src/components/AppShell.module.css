@@ -617,10 +617,3 @@
     width: 100%;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .drawer,
-  .drawer::backdrop {
-    transition: none;
-  }
-}

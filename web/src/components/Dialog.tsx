@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import s from "./Dialog.module.css";
 
 type Props = {
@@ -17,7 +17,8 @@ export function Dialog({ open, onClose, title, width = 440, className, children 
   // a press that also started on the backdrop closes the window, or the typed text would be lost.
   const pressedOutside = useRef(false);
 
-  useEffect(() => {
+  // Before the content's own effects: a field one of them focuses (a new task's title) keeps the focus.
+  useLayoutEffect(() => {
     const d = ref.current!;
     if (open && !d.open) d.showModal();
     if (!open && d.open) d.close();

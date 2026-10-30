@@ -148,7 +148,6 @@ input:not([type="checkbox"]):focus {
 textarea:focus,
 input:not([type="checkbox"]):focus {
   border-color: var(--edge, var(--accent));
-  box-shadow: inset 0 0 0 1px var(--edge, var(--accent));
 }
 
 :root[data-pointer] :focus-visible,
@@ -394,6 +393,17 @@ textarea.input {
   .input,
   textarea.input {
     font-size: 16px;
+  }
+}
+
+/* Asked for less motion, nothing slides or fades; one rule instead of one per component. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  ::backdrop {
+    transition: none !important;
+    animation: none !important;
   }
 }
 

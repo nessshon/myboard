@@ -212,6 +212,7 @@
 
 .remove:hover {
   color: var(--text);
+  background: var(--hover);
 }
 
 /* Reaches a finger past the drawn circle. */
