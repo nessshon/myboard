@@ -19,9 +19,11 @@
     transform 0.06s;
 }
 
-.btn:hover {
-  background: var(--hover);
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--hover);
+    border-color: var(--border-strong);
+  }
 }
 
 .btn:active {
@@ -43,9 +45,11 @@
   color: currentColor;
 }
 
-.btn.primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+@media (hover: hover) {
+  .btn.primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
 }
 
 .btn.danger {
@@ -54,10 +58,12 @@
   color: var(--on-solid);
 }
 
-.btn.danger:hover {
-  --danger-hover: color-mix(in srgb, var(--danger-solid) 88%, white);
-  background: var(--danger-hover);
-  border-color: var(--danger-hover);
+@media (hover: hover) {
+  .btn.danger:hover {
+    --danger-hover: color-mix(in srgb, var(--danger-solid) 88%, white);
+    background: var(--danger-hover);
+    border-color: var(--danger-hover);
+  }
 }
 
 .btn.ghost {
@@ -66,9 +72,11 @@
   color: var(--muted);
 }
 
-.btn.ghost:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .btn.ghost:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .btn.sm {
@@ -99,9 +107,11 @@
   height: 28px;
 }
 
-.icon:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .icon:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .icon[aria-pressed="true"] {

@@ -45,9 +45,11 @@
   text-align: left;
 }
 
-.item:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .item:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .item:disabled {

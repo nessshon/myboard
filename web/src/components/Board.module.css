@@ -96,12 +96,16 @@
     box-shadow 0.12s;
 }
 
-.card:hover {
-  box-shadow: var(--shadow-md);
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
 }
 
-:root[data-theme="dark"] .card:hover {
-  --surface: var(--hover);
+@media (hover: hover) {
+  :root[data-theme="dark"] .card:hover {
+    --surface: var(--hover);
+  }
 }
 
 .ghost {
@@ -173,8 +177,10 @@
   overflow-wrap: anywhere;
 }
 
-.open:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .open:hover {
+    color: var(--text);
+  }
 }
 
 .meta {

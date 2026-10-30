@@ -163,8 +163,10 @@ a {
   color: var(--accent-ink);
 }
 
-a:not([class]):hover {
-  text-decoration: underline;
+@media (hover: hover) {
+  a:not([class]):hover {
+    text-decoration: underline;
+  }
 }
 
 /* Shared text field (inputs, textareas); 16px on phones so iOS does not zoom into the page. */
@@ -178,8 +180,10 @@ a:not([class]):hover {
   color: var(--text);
 }
 
-.input:hover:not(:focus) {
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .input:hover:not(:focus) {
+    border-color: var(--border-strong);
+  }
 }
 
 textarea.input {

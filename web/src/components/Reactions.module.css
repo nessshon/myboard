@@ -27,9 +27,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-.chip:hover {
-  background: var(--active);
-  color: var(--text);
+@media (hover: hover) {
+  .chip:hover {
+    background: var(--active);
+    color: var(--text);
+  }
 }
 
 .chip[aria-pressed="true"] {
@@ -37,8 +39,10 @@
   color: var(--accent-ink);
 }
 
-.chip[aria-pressed="true"]:hover {
-  background: var(--accent-soft-hover);
+@media (hover: hover) {
+  .chip[aria-pressed="true"]:hover {
+    background: var(--accent-soft-hover);
+  }
 }
 
 .emoji {
@@ -50,10 +54,16 @@
   width: 24px;
 }
 
-.add:hover,
 .add[aria-expanded="true"] {
   background: var(--hover);
   color: var(--text);
+}
+
+@media (hover: hover) {
+  .add:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .picker {
@@ -69,8 +79,10 @@
   line-height: 1;
 }
 
-.pick:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .pick:hover {
+    background: var(--hover);
+  }
 }
 
 .mine {

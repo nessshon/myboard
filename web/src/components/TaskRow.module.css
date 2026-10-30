@@ -22,8 +22,10 @@
   border-top: 1px solid var(--border);
 }
 
-.row:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .row:hover {
+    background: var(--hover);
+  }
 }
 
 .row {

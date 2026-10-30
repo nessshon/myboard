@@ -18,8 +18,10 @@
   transition: transform 0.2s ease !important;
 }
 
-.sw:hover {
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .sw:hover {
+    border-color: var(--border-strong);
+  }
 }
 
 .sw.on {

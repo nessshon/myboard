@@ -10,9 +10,11 @@
   font-size: 13px;
 }
 
-.filter:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .filter:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .on {
@@ -22,9 +24,11 @@
   color: var(--accent-ink);
 }
 
-.on:hover {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+@media (hover: hover) {
+  .on:hover {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
 }
 
 .filter > div {
@@ -43,9 +47,11 @@
   white-space: nowrap;
 }
 
-.on .trigger:hover {
-  --fill: var(--accent-soft-hover);
-  background: var(--fill);
+@media (hover: hover) {
+  .on .trigger:hover {
+    --fill: var(--accent-soft-hover);
+    background: var(--fill);
+  }
 }
 
 .label {
@@ -101,8 +107,10 @@
   vertical-align: middle;
 }
 
-.reset:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .reset:hover {
+    background: var(--hover);
+  }
 }
 
 .filter [role="menu"] {

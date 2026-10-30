@@ -28,9 +28,11 @@
   flex: none;
 }
 
-.lang:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .lang:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .main {
@@ -109,8 +111,10 @@
   font-weight: 600;
 }
 
-.tg:hover {
-  background: var(--tg-hover);
+@media (hover: hover) {
+  .tg:hover {
+    background: var(--tg-hover);
+  }
 }
 
 .hint {
@@ -165,8 +169,10 @@
   text-align: left;
 }
 
-.devUser:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .devUser:hover {
+    background: var(--hover);
+  }
 }
 
 .devName {

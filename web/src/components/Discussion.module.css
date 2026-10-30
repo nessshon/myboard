@@ -43,9 +43,11 @@
   color: var(--muted);
 }
 
-.more:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .more:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .body {

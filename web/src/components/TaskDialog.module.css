@@ -211,8 +211,10 @@ dialog.window {
   text-overflow: ellipsis;
 }
 
-.due:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .due:hover {
+    background: var(--hover);
+  }
 }
 
 .due {
@@ -264,9 +266,11 @@ dialog.window {
   color: var(--muted);
 }
 
-.clear:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .clear:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .desc {
@@ -290,8 +294,10 @@ dialog.window {
   cursor: text;
 }
 
-.addDesc:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .addDesc:hover {
+    color: var(--text);
+  }
 }
 
 .bar {
@@ -335,8 +341,10 @@ dialog.window {
   cursor: pointer;
 }
 
-.lfield:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .lfield:hover {
+    background: var(--hover);
+  }
 }
 
 .none {
@@ -388,8 +396,10 @@ input.search {
   text-align: left;
 }
 
-.opt:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .opt:hover {
+    background: var(--hover);
+  }
 }
 
 .create {
@@ -511,10 +521,6 @@ input.search {
     border-radius: 0;
   }
 
-  .due:hover {
-    background: none;
-  }
-
   .clear {
     width: 40px;
     height: 40px;
@@ -531,9 +537,5 @@ input.search {
     padding-bottom: 13px;
     border-radius: 0;
     font-size: 16px;
-  }
-
-  .lfield:hover {
-    background: none;
   }
 }

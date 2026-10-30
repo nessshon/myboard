@@ -13,9 +13,14 @@
   gap: 8px;
 }
 
-.row:hover,
 .row:focus-within {
   background: var(--hover);
+}
+
+@media (hover: hover) {
+  .row:hover {
+    background: var(--hover);
+  }
 }
 
 .line {
@@ -40,9 +45,11 @@ input.name {
   background: none;
 }
 
-input.name:hover:not(:focus) {
-  border-color: var(--border);
-  background: var(--surface);
+@media (hover: hover) {
+  input.name:hover:not(:focus) {
+    border-color: var(--border);
+    background: var(--surface);
+  }
 }
 
 input.name:focus {
@@ -53,8 +60,10 @@ input.name:focus {
   color: var(--muted);
 }
 
-.del:hover {
-  color: var(--danger);
+@media (hover: hover) {
+  .del:hover {
+    color: var(--danger);
+  }
 }
 
 .swatches {

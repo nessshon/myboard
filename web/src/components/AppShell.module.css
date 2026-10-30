@@ -142,9 +142,14 @@
   opacity: 0;
 }
 
-.prow:hover .more,
 .prow:focus-within .more {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .prow:hover .more {
+    opacity: 1;
+  }
 }
 
 .prow:has(.more) .item {
@@ -268,9 +273,14 @@
 }
 
 .item.out,
-.item.out:hover,
 .out .nico {
   color: var(--danger);
+}
+
+@media (hover: hover) {
+  .item.out:hover {
+    color: var(--danger);
+  }
 }
 
 .panel {
@@ -365,9 +375,11 @@
   color: var(--muted);
 }
 
-.repo:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .repo:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .main {

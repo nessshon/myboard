@@ -21,8 +21,10 @@
   max-width: 100%;
 }
 
-.trigger:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .trigger:hover {
+    background: var(--hover);
+  }
 }
 
 .chev {

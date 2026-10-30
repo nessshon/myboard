@@ -131,8 +131,10 @@
   font-size: 12.5px;
 }
 
-.chip:has(a:hover, button.label:hover) {
-  background: var(--active);
+@media (hover: hover) {
+  .chip:has(a:hover, button.label:hover) {
+    background: var(--active);
+  }
 }
 
 .chip.bad {
@@ -210,9 +212,11 @@
   color: var(--muted);
 }
 
-.remove:hover {
-  color: var(--text);
-  background: var(--hover);
+@media (hover: hover) {
+  .remove:hover {
+    color: var(--text);
+    background: var(--hover);
+  }
 }
 
 /* Reaches a finger past the drawn circle. */
@@ -240,9 +244,11 @@
   color: var(--muted);
 }
 
-.clip:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .clip:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .viewer[open] {
@@ -312,8 +318,10 @@
   color: #edeef0;
 }
 
-.tool:hover {
-  background: rgb(255 255 255 / 0.1);
+@media (hover: hover) {
+  .tool:hover {
+    background: rgb(255 255 255 / 0.1);
+  }
 }
 
 .stage {
@@ -378,8 +386,10 @@
   color: #edeef0;
 }
 
-.nav:hover {
-  background: rgb(255 255 255 / 0.18);
+@media (hover: hover) {
+  .nav:hover {
+    background: rgb(255 255 255 / 0.18);
+  }
 }
 
 .prev {

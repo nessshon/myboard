@@ -57,10 +57,12 @@
   box-shadow: var(--shadow-md);
 }
 
-.arrow:hover {
-  color: var(--text);
-  border-color: var(--border-strong);
-  background: var(--hover);
+@media (hover: hover) {
+  .arrow:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--hover);
+  }
 }
 
 .left {
@@ -88,12 +90,16 @@
     box-shadow 0.12s;
 }
 
-.note:hover {
-  box-shadow: var(--shadow-md);
+@media (hover: hover) {
+  .note:hover {
+    box-shadow: var(--shadow-md);
+  }
 }
 
-:root[data-theme="dark"] .note:hover {
-  --surface: var(--hover);
+@media (hover: hover) {
+  :root[data-theme="dark"] .note:hover {
+    --surface: var(--hover);
+  }
 }
 
 .grab {

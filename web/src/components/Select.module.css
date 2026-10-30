@@ -22,8 +22,10 @@
   text-overflow: ellipsis;
 }
 
-.select:hover:not(:focus-visible) {
-  border-color: var(--border-strong);
+@media (hover: hover) {
+  .select:hover:not(:focus-visible) {
+    border-color: var(--border-strong);
+  }
 }
 
 /* A field in a panel reads as a row: no frame, a background under a mouse. :where keeps the keyboard's
