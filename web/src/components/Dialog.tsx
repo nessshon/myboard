@@ -16,10 +16,12 @@ export function Dialog({ open, onClose, title, width = 440, className, children 
   // A text selection dragged out of a field ends on the backdrop and fires a click there too; only
   // a press that also started on the backdrop closes the window, or the typed text would be lost.
   const pressedOutside = useRef(false);
+  const shown = useRef(open);
 
   // Before the content's own effects: a field one of them focuses (a new task's title) keeps the focus.
   useLayoutEffect(() => {
     const d = ref.current!;
+    shown.current = open;
     if (open && !d.open) d.showModal();
     if (!open && d.open) d.close();
   }, [open]);
@@ -30,8 +32,16 @@ export function Dialog({ open, onClose, title, width = 440, className, children 
       className={className ? `${s.dialog} ${className}` : s.dialog}
       style={{ "--dialog-width": `${width}px` } as CSSProperties}
       aria-labelledby={titleId}
-      // React passes a nested dialog's close up the component tree; only this dialog's own counts.
-      onClose={(e) => e.target === e.currentTarget && onClose()}
+      // React passes a nested dialog's close up the component tree; only this dialog's own counts. A close the
+      // owner made by `open` is already known to it.
+      onClose={(e) => e.target === e.currentTarget && shown.current && onClose()}
+      // Esc and Android's back gesture cancel a dialog; the owner closes it, so it can still ask about unsaved text.
+      // Chrome lets a page hold back only a cancel the user acted before; any other just closes.
+      onCancel={(e) => {
+        if (e.target !== e.currentTarget || !e.cancelable) return;
+        e.preventDefault();
+        onClose();
+      }}
       onPointerDown={(e) => (pressedOutside.current = e.target === e.currentTarget)}
       onClick={(e) => e.target === e.currentTarget && pressedOutside.current && onClose()}
     >

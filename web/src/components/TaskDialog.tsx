@@ -186,15 +186,16 @@ function TaskBody({
     (task
       ? title !== task.title || description !== task.description || fileEdit.changed
       : !!title.trim() || !!description.trim() || picked.length > 0);
+  // A task being created can't be called back: the window waits for it rather than asking to discard it.
   const { close, ask, question } = useLeaving(
     main,
     closing,
-    () => changed || thread.current.unsaved,
+    () => !busy && (changed || thread.current.unsaved),
     () => {
       if (task && editing) cancel();
       thread.current.discard();
     },
-    onClose,
+    () => !busy && onClose(),
   );
 
   // Into the title on the way in, back to the menu on the way out. Without preventScroll the window
