@@ -1,7 +1,7 @@
 import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { indexAmong, personName, type Note, type Project, type User } from "../api";
 import { formatDate } from "../format";
 import { useLang, useT } from "../i18n";
@@ -11,12 +11,15 @@ import { useDragSensors } from "./Board";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
 import { Dialog } from "./Dialog";
+import { Editor } from "./Editor";
 import { Filter, FilterReset } from "./Filter";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
+import { Menu, MenuItem } from "./Menu";
 import { ProjectBadge } from "./ProjectBadge";
 import { ConfirmDialog } from "./ProjectDialogs";
-import { WindowTools } from "./TaskDialog";
+import { useLeaving, WindowTools } from "./TaskDialog";
+import b from "./Button.module.css";
 import w from "./TaskDialog.module.css";
 import s from "./Notes.module.css";
 
@@ -58,6 +61,8 @@ export function Notes({
   const headId = useId();
   const sensors = useDragSensors();
   const [open, setOpen] = useState<string | null>(null);
+  // The window's own ways out (a click beside it, Esc) ask about unsaved text as its close button does.
+  const closing = useRef(() => setOpen(null));
   // The server's view rule, repeated: an admin who makes someone's note personal keeps the
   // record locally (the update answers with it), but may no longer see it.
   const list = notes?.filter((n) => n.shared || n.author === me.id) ?? null;
@@ -181,7 +186,7 @@ export function Notes({
       )}
       <Dialog
         open={open === "new" || !!note}
-        onClose={() => setOpen(null)}
+        onClose={() => closing.current()}
         title={<span className="caps">{note ? t("note.head") : t("note.newHead")}</span>}
         width={760}
         className={w.window}
@@ -191,6 +196,7 @@ export function Notes({
           me={me}
           note={note}
           people={people}
+          closing={closing}
           onClose={() => setOpen(null)}
           onShare={(shared) => note && onPatch(note.id, { shared })}
           onSave={async (draft) => {
@@ -296,6 +302,7 @@ function NoteBody({
   me,
   note,
   people,
+  closing,
   onClose,
   onShare,
   onSave,
@@ -304,6 +311,7 @@ function NoteBody({
   me: User;
   note?: Note;
   people: User[];
+  closing: RefObject<() => void>;
   onClose: () => void;
   onShare: (shared: boolean) => void;
   onSave: (draft: Draft) => Promise<void> | void;
@@ -317,6 +325,16 @@ function NoteBody({
   const [tried, setTried] = useState(false);
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const main = useRef<HTMLDivElement>(null);
+  const titleField = useRef<HTMLTextAreaElement>(null);
+
+  function edit() {
+    if (!note) return;
+    setTitle(note.title);
+    setBody(note.body);
+    setTried(false);
+    setEditing(true);
+  }
 
   async function save() {
     setTried(true);
@@ -328,12 +346,32 @@ function NoteBody({
   }
 
   function cancel() {
-    if (!note) return onClose();
-    setTitle(note.title);
-    setBody(note.body);
     setTried(false);
     setEditing(false);
   }
+
+  const changed =
+    editing &&
+    (note ? title !== note.title || body !== note.body : !!title.trim() || !!body.trim());
+  const { close, ask, question } = useLeaving(
+    main,
+    closing,
+    () => changed,
+    () => {},
+    onClose,
+  );
+
+  // Into the title on the way in, back to the menu on the way out, as in a task.
+  const wasEditing = useRef(editing);
+  useEffect(() => {
+    if (editing) titleField.current?.focus({ preventScroll: true });
+    else if (wasEditing.current)
+      main.current
+        ?.closest("dialog")
+        ?.querySelector<HTMLElement>(`[aria-label="${t("note.actions")}"]`)
+        ?.focus({ preventScroll: true });
+    wasEditing.current = editing;
+  }, [editing]);
 
   // The same split as the server's rules for notes (internal/migrations/1760572800_init.go).
   const mine = note?.author === me.id;
@@ -345,92 +383,108 @@ function NoteBody({
 
   return (
     <>
-      <WindowTools
-        editing={editing}
-        isNew={!note}
-        busy={busy}
-        deleteLabel={t("note.delete")}
-        onEdit={() => setEditing(true)}
-        onDelete={note && (mine || (admin && note.shared)) ? () => setAsking(true) : undefined}
-        onCancel={cancel}
-        onSave={save}
-        onClose={onClose}
-      >
-        {note && !note.shared && mine && (
-          <Button variant="ghost" icon="users" compact onClick={() => onShare(true)}>
-            {t("note.share")}
-          </Button>
-        )}
-        {note?.shared && (mine || admin) && (
-          <Button variant="ghost" icon="lock" compact onClick={() => onShare(false)}>
-            {t("note.unshare")}
-          </Button>
+      <WindowTools isNew={!note} busy={busy} onSave={save} onClose={close}>
+        {note && !editing && (
+          <Menu
+            label={t("note.actions")}
+            triggerClass={b.icon}
+            trigger={<Icon name="more" size={18} />}
+          >
+            <MenuItem icon="pencil" onClick={edit}>
+              {t("common.edit")}
+            </MenuItem>
+            {!note.shared && mine && (
+              <MenuItem icon="users" onClick={() => onShare(true)}>
+                {t("note.share")}
+              </MenuItem>
+            )}
+            {note.shared && (mine || admin) && (
+              <MenuItem icon="lock" onClick={() => onShare(false)}>
+                {t("note.unshare")}
+              </MenuItem>
+            )}
+            {(mine || (admin && note.shared)) && (
+              <MenuItem icon="trash" danger onClick={() => setAsking(true)}>
+                {t("common.delete")}
+              </MenuItem>
+            )}
+          </Menu>
         )}
       </WindowTools>
-      {note && !editing ? (
-        <div className={w.main}>
-          <h3 className={w.title}>{note.title}</h3>
-          <span className="hint">
-            {dated}
-            {author && ` · ${personName(author, t("users.gone"))}`}
-          </span>
-          {note.body ? (
-            <div className={w.desc}>
-              <Markdown text={note.body} />
-            </div>
-          ) : (
-            <button
-              type="button"
-              className={`${w.descEmpty} inplace multi`}
-              onClick={() => setEditing(true)}
-            >
-              {t("note.noBody")}
-            </button>
-          )}
-        </div>
-      ) : (
-        <div
-          className={w.main}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) save();
-          }}
-        >
-          <div className={w.box}>
-            <input
-              className={`input inplace ${w.titleIn}`}
-              aria-label={t("task.title")}
-              aria-invalid={tried && !title.trim()}
-              placeholder={t("note.titlePlaceholder")}
-              value={title}
-              maxLength={LIMITS.noteTitle}
-              autoFocus
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            {tried && !title.trim() ? (
-              <span className="counter full">{t("task.titleRequired")}</span>
-            ) : (
-              <Counter value={title} max={LIMITS.noteTitle} />
-            )}
-          </div>
-          {note && (
-            <span className="hint">
-              {dated}
-              {author && ` · ${personName(author, t("users.gone"))}`}
-            </span>
-          )}
-          <div className={`${w.box} ${w.grow}`}>
+      <div ref={main} className={w.main}>
+        {editing ? (
+          <Editor
+            className={w.editor}
+            head={
+              <>
+                <textarea
+                  ref={titleField}
+                  className={w.title}
+                  rows={1}
+                  aria-label={t("task.title")}
+                  aria-invalid={tried && !title.trim()}
+                  placeholder={t("note.titlePlaceholder")}
+                  value={title}
+                  maxLength={LIMITS.noteTitle}
+                  onChange={(e) => setTitle(e.target.value)}
+                  // A title is one line: Enter does not break it.
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.metaKey && !e.ctrlKey && e.preventDefault()
+                  }
+                />
+                {tried && !title.trim() ? (
+                  <span className="counter full">{t("task.titleRequired")}</span>
+                ) : (
+                  <Counter value={title} max={LIMITS.noteTitle} />
+                )}
+              </>
+            }
+            counter={<Counter value={body} max={LIMITS.noteBody} />}
+            actions={
+              note && (
+                <>
+                  <Button size="sm" variant="ghost" onClick={cancel}>
+                    {t("common.cancel")}
+                  </Button>
+                  <Button size="sm" variant="primary" onClick={save}>
+                    {t("common.save")}
+                  </Button>
+                </>
+              )
+            }
+            onSubmit={save}
+            onCancel={note ? () => (changed ? ask(cancel) : cancel()) : undefined}
+          >
             <textarea
-              className={`input inplace ${w.descIn}`}
               aria-label={t("note.body")}
               placeholder={t("note.bodyPlaceholder")}
               value={body}
               maxLength={LIMITS.noteBody}
               onChange={(e) => setBody(e.target.value)}
             />
-            <Counter value={body} max={LIMITS.noteBody} />
-          </div>
-        </div>
-      )}
+          </Editor>
+        ) : (
+          note && (
+            <>
+              <h3 className={w.title}>{note.title}</h3>
+              <span className="hint">
+                {dated}
+                {author && ` · ${personName(author, t("users.gone"))}`}
+              </span>
+              {note.body ? (
+                <div className={w.desc}>
+                  <Markdown text={note.body} />
+                </div>
+              ) : (
+                <button type="button" className={w.addDesc} onClick={edit}>
+                  {t("note.noBody")}
+                </button>
+              )}
+            </>
+          )
+        )}
+      </div>
+      {question}
       {note && (
         <ConfirmDialog
           open={asking}

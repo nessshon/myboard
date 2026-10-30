@@ -190,27 +190,6 @@ textarea.input {
   resize: vertical;
 }
 
-.inplace,
-.input.inplace {
-  --ix: 10px;
-  --iy: 4px;
-  width: calc(100% + 2 * (var(--ix) + 1px));
-  margin: calc(-1 * (var(--iy) + 1px)) calc(-1 * (var(--ix) + 1px));
-  padding: var(--iy) var(--ix);
-}
-
-textarea.input.inplace,
-.inplace.multi {
-  --ix: 12px;
-  --iy: 8px;
-}
-
-textarea.input.inplace,
-.inplace.multi {
-  font-size: 14px;
-  line-height: 1.7;
-}
-
 .input[aria-invalid="true"] {
   --edge: var(--danger);
   border-color: var(--danger);
@@ -415,21 +394,6 @@ textarea.input.inplace,
   .input,
   textarea.input {
     font-size: 16px;
-  }
-
-  .inplace {
-    --ix: 6px;
-  }
-
-  textarea.input.inplace,
-  .inplace.multi {
-    --ix: 8px;
-  }
-
-  /* 16px keeps iOS from zooming into the field; the line keeps the reading height. */
-  textarea.input.inplace {
-    font-size: 16px;
-    line-height: calc(14px * 1.7);
   }
 }
 

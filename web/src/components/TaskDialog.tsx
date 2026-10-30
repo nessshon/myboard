@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type RefObject, type ReactNode } from "react";
+import { useEffect, useRef, useState, type RefObject, type ReactNode } from "react";
 import {
   PRIORITIES,
   STATUSES,
@@ -114,7 +114,6 @@ function TaskBody({
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<Upload[]>([]);
-  const [leaving, setLeaving] = useState<(() => void) | null>(null);
   const thread = useRef({ unsaved: false, discard: () => {} });
   const me = useMe();
   const main = useRef<HTMLDivElement>(null);
@@ -177,39 +176,16 @@ function TaskBody({
     (task
       ? title !== task.title || description !== task.description || fileEdit.changed
       : !!title.trim() || !!description.trim() || picked.length > 0);
-  const unsaved = () => changed || thread.current.unsaved;
-  const ask = (then: () => void) => setLeaving(() => then);
-
-  function close() {
-    if (!unsaved()) return onClose();
-    ask(() => {
+  const { close, ask, question } = useLeaving(
+    main,
+    closing,
+    () => changed || thread.current.unsaved,
+    () => {
       if (task && editing) cancel();
       thread.current.discard();
-      onClose();
-    });
-  }
-  useEffect(() => {
-    closing.current = close;
-  });
-
-  // Esc closes a <dialog> on its own, and Chrome stops letting its cancel event be held back after two in
-  // a row; held back on keydown, it stays every time. A key the frame or a menu took is theirs.
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => {
-      const at = (e.target as Element).closest("dialog");
-      if (
-        e.key !== "Escape" ||
-        e.defaultPrevented ||
-        (at && at !== main.current?.closest("dialog"))
-      )
-        return;
-      if (!unsaved()) return;
-      e.preventDefault();
-      close();
-    };
-    addEventListener("keydown", esc);
-    return () => removeEventListener("keydown", esc);
-  });
+    },
+    onClose,
+  );
 
   // Into the title on the way in, back to the menu on the way out. Without preventScroll the window
   // scrolls the focused field to its edge and the title jumps up.
@@ -268,14 +244,7 @@ function TaskBody({
 
   return (
     <>
-      <WindowTools
-        editing={!task}
-        isNew={!task}
-        busy={busy}
-        deleteLabel={t("task.delete")}
-        onSave={save}
-        onClose={close}
-      >
+      <WindowTools isNew={!task} busy={busy} onSave={save} onClose={close}>
         {task && !editing && (
           <Menu
             label={t("task.actions")}
@@ -571,16 +540,7 @@ function TaskBody({
           />
         </div>
       )}
-      <ConfirmDialog
-        open={!!leaving}
-        title={t("common.discardTitle")}
-        confirm={t("common.discard")}
-        onClose={() => setLeaving(null)}
-        onConfirm={() => {
-          setLeaving(null);
-          leaving?.();
-        }}
-      />
+      {question}
       {task && (
         <ConfirmDialog
           open={asking}
@@ -598,77 +558,85 @@ function TaskBody({
   );
 }
 
+// Leaving with unsaved text asks first, whichever way out: the close button, a click beside the window
+// (`closing`), Esc. Esc closes a <dialog> on its own, and Chrome stops letting its cancel event be held back
+// after two in a row; held back on keydown, it stays every time. A key the frame or a menu took is theirs.
+export function useLeaving(
+  main: RefObject<HTMLElement | null>,
+  closing: RefObject<() => void>,
+  unsaved: () => boolean,
+  discard: () => void,
+  onClose: () => void,
+) {
+  const t = useT();
+  const [leaving, setLeaving] = useState<(() => void) | null>(null);
+  const ask = (then: () => void) => setLeaving(() => then);
+
+  function close() {
+    if (!unsaved()) return onClose();
+    ask(() => {
+      discard();
+      onClose();
+    });
+  }
+  useEffect(() => {
+    closing.current = close;
+  });
+
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => {
+      const at = (e.target as Element).closest("dialog");
+      if (
+        e.key !== "Escape" ||
+        e.defaultPrevented ||
+        (at && at !== main.current?.closest("dialog"))
+      )
+        return;
+      if (!unsaved()) return;
+      e.preventDefault();
+      close();
+    };
+    addEventListener("keydown", esc);
+    return () => removeEventListener("keydown", esc);
+  });
+
+  const question = (
+    <ConfirmDialog
+      open={!!leaving}
+      title={t("common.discardTitle")}
+      confirm={t("common.discard")}
+      onClose={() => setLeaving(null)}
+      onConfirm={() => {
+        setLeaving(null);
+        leaving?.();
+      }}
+    />
+  );
+  return { close, ask, question };
+}
+
 export function WindowTools({
-  editing,
   isNew,
   busy,
-  deleteLabel,
-  onEdit,
-  onDelete,
-  onCancel,
   onSave,
   onClose,
   children,
 }: {
-  editing: boolean;
   isNew: boolean;
   busy: boolean;
-  deleteLabel: string;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onCancel?: () => void;
   onSave: () => void;
   onClose: () => void;
   children?: ReactNode;
 }) {
   const t = useT();
-  const tools = useRef<HTMLDivElement>(null);
-
-  // While an open item is being edited, Esc leaves editing instead of closing the window and
-  // dropping the text. The label picker is a window of its own and takes its own Esc. No deps:
-  // the listener has to call this render's onCancel, which resets to the latest saved text.
-  useEffect(() => {
-    const dialog = tools.current?.closest("dialog");
-    if (isNew || !editing || !dialog) return;
-    const cancel = (e: Event) => {
-      e.preventDefault();
-      onCancel?.();
-    };
-    dialog.addEventListener("cancel", cancel);
-    return () => dialog.removeEventListener("cancel", cancel);
-  });
-
-  const wasEditing = useRef(editing);
-  useEffect(() => {
-    if (wasEditing.current && !editing)
-      tools.current?.querySelector<HTMLElement>(`.${s.pen}`)?.focus({ preventScroll: true });
-    wasEditing.current = editing;
-  }, [editing]);
-
   return (
-    <div ref={tools} className={s.tools}>
-      {editing ? (
-        <span key="edit" className={s.pair}>
-          {!isNew && <Button onClick={onCancel}>{t("common.cancel")}</Button>}
-          <Button variant="primary" disabled={busy} onClick={onSave}>
-            {isNew ? t("common.create") : t("common.save")}
-          </Button>
-        </span>
+    <div className={s.tools}>
+      {isNew ? (
+        <Button variant="primary" disabled={busy} onClick={onSave}>
+          {t("common.create")}
+        </Button>
       ) : (
-        <Fragment key="view">
-          {children}
-          {onEdit && (
-            <Button
-              icon="pencil"
-              className={s.pen}
-              aria-label={t("common.edit")}
-              onClick={onEdit}
-            />
-          )}
-          {onDelete && (
-            <Button icon="trash" className={s.del} aria-label={deleteLabel} onClick={onDelete} />
-          )}
-        </Fragment>
+        children
       )}
       <span className={s.sep} aria-hidden="true" />
       <Button icon="x" aria-label={t("common.close")} onClick={onClose} />

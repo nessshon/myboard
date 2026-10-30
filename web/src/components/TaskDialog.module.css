@@ -118,31 +118,8 @@
   overflow-wrap: anywhere;
 }
 
-input.titleIn {
-  height: auto;
-  font-size: 22px;
-  line-height: 1.3;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-}
-
-.box {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.grow {
-  flex: 1;
-}
-
 .late {
   color: var(--danger);
-}
-
-textarea.descIn {
-  flex: 1;
-  min-height: 220px;
 }
 
 .tools {
@@ -152,24 +129,8 @@ textarea.descIn {
   gap: 4px;
 }
 
-.del:hover {
-  color: var(--danger);
-}
-
-.pen:hover {
-  color: var(--accent-ink);
-}
-
-.tools > button,
-.pair > button {
+.tools > button {
   animation: appear 0.12s ease;
-}
-
-.pair {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 4px;
 }
 
 @keyframes appear {
@@ -179,8 +140,7 @@ textarea.descIn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tools > button,
-  .pair > button {
+  .tools > button {
     animation: none;
   }
 }
@@ -330,22 +290,6 @@ textarea.descIn {
 
 .addDesc:hover {
   color: var(--text);
-}
-
-.descEmpty {
-  min-height: 140px;
-  display: flex;
-  align-items: flex-start;
-  border: 1px dashed var(--border);
-  border-radius: var(--r-sm);
-  color: var(--muted);
-  text-align: left;
-  cursor: text;
-}
-
-.descEmpty:hover {
-  border-color: var(--border-strong);
-  color: var(--muted);
 }
 
 .bar {
@@ -499,14 +443,11 @@ input.search {
     padding: 20px 16px 12px;
   }
 
-  .title,
-  input.titleIn {
+  .title {
     font-size: 21px;
   }
 
-  .desc,
-  .descEmpty,
-  textarea.descIn {
+  .desc {
     min-height: 200px;
   }
 
