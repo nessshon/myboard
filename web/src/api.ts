@@ -245,7 +245,7 @@ export const myOpenCount = async (userId: string) =>
     })
   ).totalItems;
 
-const OPEN_ORDER: Status[] = ["in_progress", "todo", "backlog"];
+const OPEN_ORDER: Status[] = ["review", "in_progress", "todo", "backlog"];
 
 export const myOpenTasks = async (userId: string) => {
   const rows = await pb.collection("tasks").getFullList<Task & { expand?: { project?: Project } }>({
