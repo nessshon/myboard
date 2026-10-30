@@ -39,6 +39,12 @@
   gap: 8px;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .filters {
   position: relative;
   min-width: 0;
@@ -99,6 +105,8 @@
 
   .filters {
     padding: 0 16px;
-    margin: 4px 0 8px;
+    margin: 12px 0 8px;
+    flex-direction: column;
+    align-items: stretch;
   }
 }

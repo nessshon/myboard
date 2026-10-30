@@ -267,6 +267,21 @@ export function ProjectPage({
     );
   };
 
+  const tools = !!sortedTasks && (sortedTasks.length > 0 || filtering || !!sortedLabels?.length);
+  // On a phone the filters stand in a column, so the order moves up beside the add button.
+  const sort = (
+    <Order
+      title={t("order.title")}
+      options={ORDERS.map((id) => ({ id, name: t(`order.${id}`) }))}
+      chosen={order.by}
+      onChange={(by) =>
+        by !== order.by && pickOrder({ by, desc: by !== "manual" && sorts[by].desc })
+      }
+      desc={order.by === "manual" ? undefined : order.desc}
+      onDesc={(desc) => pickOrder({ ...order, desc })}
+    />
+  );
+
   return (
     <div className={`page ${s.page}`}>
       {project.archived && (
@@ -299,11 +314,20 @@ export function ProjectPage({
             {t("project.tasks")}
             {sortedTasks && <span className="count">{sortedTasks.length}</span>}
           </h2>
-          <Button size="sm" variant="primary" icon="plus" compact onClick={() => setCreating(true)}>
-            {t("task.new")}
-          </Button>
+          <div className={s.actions}>
+            {isPhone && tools && sort}
+            <Button
+              size="sm"
+              variant="primary"
+              icon="plus"
+              compact
+              onClick={() => setCreating(true)}
+            >
+              {t("task.new")}
+            </Button>
+          </div>
         </div>
-        {sortedTasks && (sortedTasks.length > 0 || filtering || !!sortedLabels?.length) && (
+        {tools && (
           <div className={s.filters}>
             <Filter
               title={t("task.assignees")}
@@ -348,16 +372,7 @@ export function ProjectPage({
               </Filter>
             )}
             {filtering && <FilterReset onClick={() => setOnly(noFilter)} />}
-            <Order
-              title={t("order.title")}
-              options={ORDERS.map((id) => ({ id, name: t(`order.${id}`) }))}
-              chosen={order.by}
-              onChange={(by) =>
-                by !== order.by && pickOrder({ by, desc: by !== "manual" && sorts[by].desc })
-              }
-              desc={order.by === "manual" ? undefined : order.desc}
-              onDesc={(desc) => pickOrder({ ...order, desc })}
-            />
+            {!isPhone && sort}
           </div>
         )}
         {filtering && shownTasks?.length === 0 ? (

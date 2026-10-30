@@ -170,8 +170,15 @@
     height: 36px;
   }
 
+  /* A filter stretched across a column (the board's on a phone) keeps its name left and its marks right. */
+  .filter:not(.order) > div,
+  .trigger {
+    width: 100%;
+  }
+
   .trigger {
     padding: 0 8px;
+    justify-content: space-between;
   }
 
   .reset {
@@ -189,17 +196,12 @@
     display: none;
   }
 
-  .filter,
-  .filter > div {
-    position: static;
-  }
-
   .filter [role="menu"] {
     left: 0;
     right: auto;
   }
 
-  /* The full label does not fit beside the filters on a phone; an icon stands for it, the menu says the rest. */
+  /* The full label does not fit beside the add button on a phone; an icon stands for it, the menu says the rest. */
   .order .label,
   .order .wide {
     display: none;
@@ -214,10 +216,6 @@
     width: 34px;
     padding: 0;
     justify-content: center;
-  }
-
-  .order {
-    position: relative;
   }
 
   .order [role="menu"] {
