@@ -22,7 +22,7 @@ import own from "./IntegrationsPage.module.css";
 import { formatDay } from "../format";
 import { copyText } from "../browser";
 
-const KINDS = ["added", "assigned", "status", "comment"] as const;
+const KINDS = ["assigned", "status", "comment"] as const;
 
 export function IntegrationsPage() {
   const t = useT();
@@ -51,7 +51,9 @@ export function IntegrationsPage() {
   }, []);
 
   async function toggle(kind: string) {
-    const next = off.includes(kind) ? off.filter((k) => k !== kind) : [...off, kind];
+    // Kinds the bot no longer knows (once "added") fall away with the next change.
+    const known = off.filter((k) => KINDS.includes(k as (typeof KINDS)[number]));
+    const next = known.includes(kind) ? known.filter((k) => k !== kind) : [...known, kind];
     setOff(next);
     setSaving(true);
     try {

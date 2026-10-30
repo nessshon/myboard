@@ -10,6 +10,7 @@ export const LIMITS = {
   tokenName: 40,
   comment: 5000,
   assignees: 10,
+  reviewers: 10,
   attachmentSize: 50 * 1024 * 1024,
   attachmentsPerComment: 10,
 } as const;

@@ -13,14 +13,15 @@ import (
 
 // texts are the words of the messages; "who" is a label, so no verb has to agree with anyone's gender.
 type texts struct {
-	assigned, added, comment, file, due, status, who string
-	statusTitle, statusName                          map[string]string
-	months                                           [12]string
+	assigned, reviewer, added, comment, file, due, status, reviewers, who string
+	statusTitle, statusName                                               map[string]string
+	months                                                                [12]string
 }
 
 var words = map[string]texts{
 	"ru": {
-		assigned: "Вам назначена задача", added: "Вас добавили в проект", comment: "Новый комментарий", file: "📎 файл", due: "Срок:", status: "Статус:", who: "Кто:",
+		assigned: "Вам назначена задача", reviewer: "Вас добавили проверяющим", added: "Вас добавили в проект", comment: "Новый комментарий",
+		file: "📎 файл", due: "Срок:", status: "Статус:", reviewers: "Проверяющие:", who: "Кто:",
 		statusTitle: map[string]string{
 			"backlog": "Задача перенесена в «Бэклог»", "todo": "Задача перенесена в «К работе»", "in_progress": "Задача взята в работу",
 			"review": "Задача на проверке", "done": "Задача выполнена",
@@ -31,7 +32,8 @@ var words = map[string]texts{
 		months: [12]string{"января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"},
 	},
 	"en": {
-		assigned: "You've been assigned a task", added: "You've been added to a project", comment: "New comment", file: "📎 file", due: "Due:", status: "Status:", who: "By:",
+		assigned: "You've been assigned a task", reviewer: "You've been added as a reviewer", added: "You've been added to a project", comment: "New comment",
+		file: "📎 file", due: "Due:", status: "Status:", reviewers: "Reviewers:", who: "By:",
 		statusTitle: map[string]string{
 			"backlog": `Task moved to "Backlog"`, "todo": `Task moved to "Todo"`, "in_progress": "Task started",
 			"review": "Task in review", "done": "Task done",
@@ -56,12 +58,20 @@ func assignedMessage(lang, publicURL string, task, project *core.Record, by stri
 	return message("📌", w.assigned, taskHead(publicURL, task, project), append(lines, who(w, by)...))
 }
 
-func statusMessage(lang, publicURL string, task, project *core.Record, oldStatus, by string) string {
+func reviewerMessage(lang, publicURL string, task, project *core.Record, by string) string {
+	w := words[lang]
+	return message("📌", w.reviewer, taskHead(publicURL, task, project),
+		append([]string{label(w.status, w.statusName[task.GetString("status")])}, who(w, by)...))
+}
+
+func statusMessage(lang, publicURL string, task, project *core.Record, oldStatus, by string, reviewers []string) string {
 	w := words[lang]
 	status := task.GetString("status")
-	change := w.statusName[oldStatus] + " → " + w.statusName[status]
-	return message(statusMark[status], w.statusTitle[status], taskHead(publicURL, task, project),
-		append([]string{label(w.status, change)}, who(w, by)...))
+	lines := []string{label(w.status, w.statusName[oldStatus]+" → "+w.statusName[status])}
+	if len(reviewers) > 0 {
+		lines = append(lines, label(w.reviewers, strings.Join(reviewers, ", ")))
+	}
+	return message(statusMark[status], w.statusTitle[status], taskHead(publicURL, task, project), append(lines, who(w, by)...))
 }
 
 func addedMessage(lang, publicURL string, project *core.Record, by string) string {

@@ -266,3 +266,88 @@ func TestCommentQuote(t *testing.T) {
 		t.Errorf("cut of a short text: %q", got)
 	}
 }
+
+func TestReviewers(t *testing.T) {
+	fake := &fakeTelegram{sent: map[string][]string{}}
+	server := httptest.NewServer(fake)
+	defer server.Close()
+	apiBase = server.URL
+
+	app := testutil.NewApp(t)
+	defer app.Cleanup()
+	cfg := *testutil.Config
+	cfg.TelegramBotToken = "123:test"
+	Register(app, &cfg)
+	h := testutil.Handler(t, app)
+
+	alice := testutil.User(t, app, "360000001", "member")
+	bob := testutil.User(t, app, "360000002", "member")
+	carol := testutil.User(t, app, "360000003", "member")
+	dave := testutil.User(t, app, "360000004", "member")
+	admin := testutil.User(t, app, "360000009", "admin")
+	dave.Set("notify_off", []string{kindAssigned})
+	if err := app.Save(dave); err != nil {
+		t.Fatal(err)
+	}
+	p := testutil.Project(t, app, "REV", alice, bob, carol, dave)
+	aliceTok, bobTok := testutil.Token(t, alice), testutil.Token(t, bob)
+
+	// An assignee who is also made a reviewer hears once, as the assignee; a new task tells no status.
+	status, body := testutil.Do(t, h, aliceTok, http.MethodPost, "/api/collections/tasks/records",
+		`{"project":"`+p.Id+`","title":"Check sessions","assignees":["`+bob.Id+`"],"reviewers":["`+bob.Id+`","`+carol.Id+`"]}`)
+	if status != 200 {
+		t.Fatalf("create: %d %v", status, body)
+	}
+	task := "/api/collections/tasks/records/" + body["id"].(string)
+	if got := fake.waitFor(t, "360000003", 1); !strings.Contains(got[0], "Вас добавили проверяющим") || !strings.Contains(got[0], "Статус:</b> К работе") {
+		t.Fatalf("reviewer message:\n%s", got[0])
+	}
+	if got := fake.waitFor(t, "360000002", 1); !strings.Contains(got[0], "Вам назначена задача") {
+		t.Fatalf("assignee message:\n%s", got[0])
+	}
+
+	// In review, every participant but the one who moved it hears it, with the reviewers named.
+	testutil.Do(t, h, bobTok, http.MethodPatch, task, `{"status":"review"}`)
+	for _, chat := range []string{"360000001", "360000003"} {
+		got := fake.waitFor(t, chat, map[string]int{"360000001": 1, "360000003": 2}[chat])
+		last := got[len(got)-1]
+		if !strings.Contains(last, "Задача на проверке") || !strings.Contains(last, "Проверяющие:</b> user 360000002, user 360000003") {
+			t.Fatalf("review message to %s:\n%s", chat, last)
+		}
+	}
+
+	// One save adds a reviewer and closes the task: the new reviewer gets one message at most (here none:
+	// assignments are off for dave), and "Проверяющие" is only for the review status.
+	testutil.Do(t, h, aliceTok, http.MethodPatch, task, `{"reviewers+":"`+dave.Id+`","status":"done"}`)
+	if got := fake.waitFor(t, "360000003", 3); !strings.Contains(got[2], "Задача выполнена") || strings.Contains(got[2], "Проверяющие") {
+		t.Fatalf("done message:\n%s", got[2])
+	}
+	fake.waitFor(t, "360000002", 2)
+
+	// Already an assignee, made a reviewer without a status change: nothing new.
+	testutil.Do(t, h, aliceTok, http.MethodPatch, task, `{"reviewers+":"`+bob.Id+`"}`)
+
+	// Reviewers hear comments like assignees do.
+	testutil.Do(t, h, aliceTok, http.MethodPost, "/api/collections/comments/records", `{"task":"`+body["id"].(string)+`","body":"Looks good"}`)
+	if got := fake.waitFor(t, "360000003", 4); !strings.Contains(got[3], "Новый комментарий") {
+		t.Fatalf("comment to a reviewer:\n%s", got[3])
+	}
+	fake.waitFor(t, "360000002", 3)
+
+	// Assignments off also covers being added to a project.
+	other := testutil.Project(t, app, "OTH", alice)
+	if status, body := testutil.Do(t, h, testutil.Token(t, admin), http.MethodPatch, "/api/collections/projects/records/"+other.Id,
+		`{"members":["`+alice.Id+`","`+dave.Id+`"]}`); status != 200 {
+		t.Fatalf("add member: %d %v", status, body)
+	}
+
+	time.Sleep(300 * time.Millisecond)
+	for chat, want := range map[string]int{"360000001": 1, "360000002": 3, "360000003": 4, "360000004": 1} {
+		if n := len(fake.texts(chat)); n != want {
+			t.Fatalf("chat %s got %d messages, want %d: %v", chat, n, want, fake.texts(chat))
+		}
+	}
+	if got := fake.texts("360000004"); !strings.Contains(got[0], "Новый комментарий") {
+		t.Fatalf("dave, a reviewer with assignments off, should hear only the comment:\n%s", got[0])
+	}
+}

@@ -120,46 +120,51 @@ func TestNotesGoToTheEnd(t *testing.T) {
 	}
 }
 
-func TestTaskOfAnAssigneeWhoLeft(t *testing.T) {
-	app := testutil.NewApp(t)
-	defer app.Cleanup()
+// The same for both lists of people: only members may be added, and one who left keeps the task editable.
+func TestTaskOfSomeoneWhoLeft(t *testing.T) {
+	for _, field := range []string{"assignees", "reviewers"} {
+		t.Run(field, func(t *testing.T) {
+			app := testutil.NewApp(t)
+			defer app.Cleanup()
 
-	alice := testutil.User(t, app, "300000011", "member")
-	bob := testutil.User(t, app, "300000012", "member")
-	p := testutil.Project(t, app, "LFT", alice, bob)
-	task := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "t", "assignees": []string{bob.Id}})
-	p, err := app.FindRecordById("projects", p.Id)
-	if err != nil {
-		t.Fatal(err)
-	}
-	p.Set("members-", bob.Id)
-	if err := app.Save(p); err != nil {
-		t.Fatal(err)
-	}
-	h := testutil.Handler(t, app)
-	tok := testutil.Token(t, alice)
+			alice := testutil.User(t, app, "300000011", "member")
+			bob := testutil.User(t, app, "300000012", "member")
+			p := testutil.Project(t, app, "LFT", alice, bob)
+			task := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "t", field: []string{bob.Id}})
+			p, err := app.FindRecordById("projects", p.Id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			p.Set("members-", bob.Id)
+			if err := app.Save(p); err != nil {
+				t.Fatal(err)
+			}
+			h := testutil.Handler(t, app)
+			tok := testutil.Token(t, alice)
 
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"title":"renamed"}`); status != 200 {
-		t.Fatalf("edit title: %d %v", status, body)
-	}
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"assignees":["`+bob.Id+`"],"title":"again"}`); status != 200 {
-		t.Fatalf("resending the same assignee: %d %v", status, body)
-	}
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"assignees":["`+bob.Id+`","`+alice.Id+`"]}`); status != 200 {
-		t.Fatalf("adding a member next to one who left: %d %v", status, body)
-	}
-	other := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "u"})
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"assignees":["`+bob.Id+`"]}`); status != 400 {
-		t.Fatalf("assigning a non-member: %d, want 400 (%v)", status, body)
-	}
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"assignees+":"`+bob.Id+`"}`); status != 400 {
-		t.Fatalf("adding a non-member with assignees+: %d, want 400 (%v)", status, body)
-	}
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"assignees+":"`+alice.Id+`"}`); status != 200 {
-		t.Fatalf("adding a member with assignees+: %d %v", status, body)
-	}
-	if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"assignees-":"`+alice.Id+`"}`); status != 200 || len(body["assignees"].([]any)) != 1 {
-		t.Fatalf("removing one assignee with assignees-: %d %v", status, body)
+			if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"title":"renamed"}`); status != 200 {
+				t.Fatalf("edit title: %d %v", status, body)
+			}
+			if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"`+field+`":["`+bob.Id+`"],"title":"again"}`); status != 200 {
+				t.Fatalf("resending the same person: %d %v", status, body)
+			}
+			if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"`+field+`":["`+bob.Id+`","`+alice.Id+`"]}`); status != 200 {
+				t.Fatalf("adding a member next to one who left: %d %v", status, body)
+			}
+			other := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "u"})
+			if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"`+field+`":["`+bob.Id+`"]}`); status != 400 {
+				t.Fatalf("setting a non-member: %d, want 400 (%v)", status, body)
+			}
+			if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"`+field+`+":"`+bob.Id+`"}`); status != 400 {
+				t.Fatalf("adding a non-member with +: %d, want 400 (%v)", status, body)
+			}
+			if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+other.Id, `{"`+field+`+":"`+alice.Id+`"}`); status != 200 {
+				t.Fatalf("adding a member with +: %d %v", status, body)
+			}
+			if status, body := testutil.Do(t, h, tok, http.MethodPatch, "/api/collections/tasks/records/"+task.Id, `{"`+field+`-":"`+alice.Id+`"}`); status != 200 || len(body[field].([]any)) != 1 {
+				t.Fatalf("removing one with -: %d %v", status, body)
+			}
+		})
 	}
 }
 

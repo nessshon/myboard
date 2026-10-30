@@ -18,7 +18,7 @@ Each collection is at `$MB/api/collections/<name>/records`.
 - `id`, `name` (1–60 chars), `key` (2–10 chars, `^[A-Z][A-Z0-9]+$`, prefix of task numbers, e.g. `MYB`), `description` (≤500), `members` (user ids), `archived` (bool), `color` (`#rrggbb`, lowercase, or empty).
 
 **tasks** — read and write for project members and admins.
-- `id`, `project` (project id; fixed after creation), `number` (set by the server, unique per project; a task is called `KEY-number`, e.g. `MYB-17`), `title` (1–200 chars), `description` (Markdown, ≤20000), `status` (`backlog`, `todo`, `in_progress`, `review`, `done`), `priority` (`low`, `normal`, `high`, `urgent`), `assignees` (up to 10 user ids; each one added must be a member of the project; `"assignees+":"ID"` adds one, `"assignees-":"ID"` removes one), `labels` (label ids of the same project), `due` (`YYYY-MM-DD` or empty), `position` (number; lower is higher in its column), `author` (set by the server), `edited` (set by the server when a person changes the content, not the order; empty until then), `started` (set by the server when the task last moved to `in_progress`; empty again once it goes back to `backlog` or `todo`), `submitted` (set by the server when the task last moved to `review`; empty again once it goes back to `in_progress` or earlier), `closed` (set by the server when the task last moved to `done`; empty again once it is reopened).
+- `id`, `project` (project id; fixed after creation), `number` (set by the server, unique per project; a task is called `KEY-number`, e.g. `MYB-17`), `title` (1–200 chars), `description` (Markdown, ≤20000), `status` (`backlog`, `todo`, `in_progress`, `review`, `done`), `priority` (`low`, `normal`, `high`, `urgent`), `assignees` (up to 10 user ids; each one added must be a member of the project; `"assignees+":"ID"` adds one, `"assignees-":"ID"` removes one), `reviewers` (who checks the task in `review`; the same rules as `assignees`, with `"reviewers+"` and `"reviewers-"`), `labels` (label ids of the same project), `due` (`YYYY-MM-DD` or empty), `position` (number; lower is higher in its column), `author` (set by the server), `edited` (set by the server when a person changes the content, not the order; empty until then), `started` (set by the server when the task last moved to `in_progress`; empty again once it goes back to `backlog` or `todo`), `submitted` (set by the server when the task last moved to `review`; empty again once it goes back to `in_progress` or earlier), `closed` (set by the server when the task last moved to `done`; empty again once it is reopened).
 - A new task goes to the top of its column. To move a task, PATCH `status` and, if order matters, `position`.
 
 **labels** — per project; members read and write.
@@ -50,7 +50,7 @@ Each collection is at `$MB/api/collections/<name>/records`.
 List requests take these query parameters (URL-encode them, e.g. with `curl -G --data-urlencode`):
 - `filter` — e.g. `project.key = "MYB" && status != "done"`. Operators: `=`, `!=`, `>`, `<`, `~` (contains), `?=` (any item of a list matches; for list relations name the id: `labels.id ?= "LABEL_ID"`, `assignees.id ?= "USER_ID"`), `&&`, `||`, parentheses. Use literal ids in filters; `@request.auth` is not allowed there.
 - `sort` — fields, `-` for descending: `sort=status,position` or `sort=-updated`. `status` sorts by its name, alphabetically.
-- `expand` — inline related records: `expand=project,assignees,labels`.
+- `expand` — inline related records: `expand=project,assignees,reviewers,labels`.
 - `page`, `perPage` (default 30, max 1000).
 
 A list answers `{"page":1,"perPage":30,"totalItems":2,"totalPages":1,"items":[...]}`. Records you may not see are simply absent from lists.
@@ -67,12 +67,12 @@ TOKEN=mbt_...
 auth=(-H "Authorization: Bearer $TOKEN")
 ```
 
-My open tasks across all projects, with their project:
+My open tasks across all projects (as an assignee or a reviewer), with their project:
 
 ```sh
 ME=$(curl -s "${auth[@]}" "$MB/api/myboard/me" | jq -r .id)
 curl -sG "${auth[@]}" "$MB/api/collections/tasks/records" \
-  --data-urlencode "filter=assignees.id ?= \"$ME\" && status != \"done\"" \
+  --data-urlencode "filter=(assignees.id ?= \"$ME\" || reviewers.id ?= \"$ME\") && status != \"done\"" \
   --data-urlencode 'expand=project' --data-urlencode 'sort=status,position'
 ```
 

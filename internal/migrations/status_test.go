@@ -27,7 +27,7 @@ func TestReviewReplacesCancelled(t *testing.T) {
 	items := core.AppMigrations.Items()
 	back := 0
 	for i, m := range items {
-		if m.File == "1793318400_task_dates.go" {
+		if m.File == "1793318400_task_review.go" {
 			back = len(items) - i
 		}
 	}

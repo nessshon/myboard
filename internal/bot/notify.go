@@ -6,14 +6,15 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/list"
 
 	"github.com/nessshon/myboard/internal/apitoken"
 )
 
+// Kinds in users.notify_off. Being added to a project counts as an assignment.
 const (
 	kindAssigned = "assigned"
 	kindStatus   = "status"
-	kindAdded    = "added"
 	kindComment  = "comment"
 )
 
@@ -22,17 +23,16 @@ func (b *Bot) bindEvents() {
 		if err := e.Next(); err != nil {
 			return err
 		}
-		b.taskChanged(e, nil, e.Record.GetString("status"))
+		b.taskChanged(e, nil)
 		return nil
 	})
 
 	b.app.OnRecordUpdateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
-		before := e.Record.Original()
-		assignees, status := before.GetStringSlice("assignees"), before.GetString("status")
+		before := e.Record.Original().Clone()
 		if err := e.Next(); err != nil {
 			return err
 		}
-		b.taskChanged(e, assignees, status)
+		b.taskChanged(e, before)
 		return nil
 	})
 
@@ -55,7 +55,7 @@ func (b *Bot) bindEvents() {
 			if slices.Contains(members, id) || id == authID(e) {
 				continue
 			}
-			if user := b.recipient(id, kindAdded, project); user != nil {
+			if user := b.recipient(id, kindAssigned, project); user != nil {
 				b.enqueue(user, addedMessage(lang(user), b.publicURL, project, by))
 			}
 		}
@@ -80,7 +80,7 @@ func (b *Bot) commented(e *core.RecordRequestEvent) {
 		b.app.Logger().Warn("notify: find comments", "task", task.Id, "error", err)
 		return
 	}
-	people := append([]string{task.GetString("author")}, task.GetStringSlice("assignees")...)
+	people := participants(task)
 	for _, c := range thread {
 		people = append(people, c.GetString("author"))
 	}
@@ -103,7 +103,9 @@ func (b *Bot) commented(e *core.RecordRequestEvent) {
 	}
 }
 
-func (b *Bot) taskChanged(e *core.RecordRequestEvent, oldAssignees []string, oldStatus string) {
+// One save sends a person one message at most, the weightiest for them: made an assignee, else made a reviewer, else
+// the status moved. A new task has no status change to tell (before is nil).
+func (b *Bot) taskChanged(e *core.RecordRequestEvent, before *core.Record) {
 	task := e.Record
 	project, err := b.app.FindRecordById("projects", task.GetString("project"))
 	if err != nil {
@@ -111,31 +113,72 @@ func (b *Bot) taskChanged(e *core.RecordRequestEvent, oldAssignees []string, old
 		return
 	}
 	by := actor(e)
-
-	var assigned []string
-	for _, id := range task.GetStringSlice("assignees") {
-		if slices.Contains(oldAssignees, id) || id == authID(e) {
-			continue
+	was := func(field string) []string {
+		if before == nil {
+			return nil
 		}
-		assigned = append(assigned, id)
+		return before.GetStringSlice(field)
+	}
+
+	assigned := joined(e, task.GetStringSlice("assignees"), was("assignees"))
+	for _, id := range assigned {
 		if user := b.recipient(id, kindAssigned, project); user != nil {
 			b.enqueue(user, assignedMessage(lang(user), b.publicURL, task, project, by))
 		}
 	}
+	var reviewing []string
+	for _, id := range joined(e, task.GetStringSlice("reviewers"), was("reviewers")) {
+		if slices.Contains(task.GetStringSlice("assignees"), id) {
+			continue
+		}
+		reviewing = append(reviewing, id)
+		if user := b.recipient(id, kindAssigned, project); user != nil {
+			b.enqueue(user, reviewerMessage(lang(user), b.publicURL, task, project, by))
+		}
+	}
 
-	status := task.GetString("status")
-	if status == oldStatus {
+	if before == nil || task.GetString("status") == before.GetString("status") {
 		return
 	}
-	people := append([]string{task.GetString("author")}, task.GetStringSlice("assignees")...)
-	for i, id := range people {
-		if id == authID(e) || slices.Contains(assigned, id) || slices.Contains(people[:i], id) {
+	reviewers := b.reviewerNames(task)
+	for _, id := range participants(task) {
+		if id == authID(e) || slices.Contains(assigned, id) || slices.Contains(reviewing, id) {
 			continue
 		}
 		if user := b.recipient(id, kindStatus, project); user != nil {
-			b.enqueue(user, statusMessage(lang(user), b.publicURL, task, project, oldStatus, by))
+			b.enqueue(user, statusMessage(lang(user), b.publicURL, task, project, before.GetString("status"), by, reviewers))
 		}
 	}
+}
+
+// Shown only once the task is in review, in the order they were picked.
+func (b *Bot) reviewerNames(task *core.Record) []string {
+	if task.GetString("status") != "review" {
+		return nil
+	}
+	var names []string
+	for _, id := range task.GetStringSlice("reviewers") {
+		if user, err := b.app.FindRecordById("users", id); err == nil {
+			names = append(names, userName(user))
+		}
+	}
+	return names
+}
+
+func participants(task *core.Record) []string {
+	people := append([]string{task.GetString("author")}, task.GetStringSlice("assignees")...)
+	return list.NonzeroUniques(append(people, task.GetStringSlice("reviewers")...))
+}
+
+// Whoever saved is not told about their own change.
+func joined(e *core.RecordRequestEvent, now, was []string) []string {
+	var ids []string
+	for _, id := range now {
+		if !slices.Contains(was, id) && id != authID(e) {
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }
 
 func (b *Bot) recipient(id, kind string, project *core.Record) *core.Record {

@@ -37,7 +37,7 @@ import s from "./TaskDialog.module.css";
 
 export type TaskFields = Pick<
   Task,
-  "title" | "description" | "status" | "priority" | "assignees" | "due" | "labels"
+  "title" | "description" | "status" | "priority" | "assignees" | "reviewers" | "due" | "labels"
 >;
 
 const blank: TaskFields = {
@@ -46,6 +46,7 @@ const blank: TaskFields = {
   status: "todo",
   priority: "normal",
   assignees: [],
+  reviewers: [],
   due: "",
   labels: [],
 };
@@ -200,17 +201,6 @@ function TaskBody({
     wasEditing.current = editing;
   }, [editing]);
 
-  const choices = [
-    ...members,
-    ...people.filter((p) => v.assignees.includes(p.id) && !members.some((m) => m.id === p.id)),
-  ];
-  const who = v.assignees.flatMap((id) => people.filter((p) => p.id === id));
-  const assign = (id: string) =>
-    set({
-      assignees: v.assignees.includes(id)
-        ? v.assignees.filter((x) => x !== id)
-        : [...v.assignees, id],
-    });
   const author = task && people.find((p) => p.id === task.author);
 
   // A new task has nowhere to keep a file yet: its files wait here until it is created.
@@ -393,44 +383,24 @@ function TaskBody({
               ))}
             </Select>
           </div>
-          <span className={`${s.k} ${s.top}`}>{t("task.assignees")}</span>
-          <Menu
+          <People
             label={t("task.assignees")}
-            triggerClass={s.lfield}
-            trigger={
-              <>
-                <span className={s.ico}>
-                  <Icon name="userCheck" size={16} />
-                </span>
-                {who.length === 0 ? (
-                  <span className={s.none}>{t("task.unassigned")}</span>
-                ) : (
-                  <span className={s.people}>
-                    <span className={s.faces}>
-                      {who.slice(0, 3).map((p) => (
-                        <Avatar key={p.id} name={personName(p)} src={p.avatar_url} size={18} />
-                      ))}
-                    </span>
-                    <span className="ellipsis">
-                      {who.map((p) => personName(p, t("users.gone"))).join(", ")}
-                    </span>
-                  </span>
-                )}
-              </>
-            }
-          >
-            {choices.map((m) => (
-              <MenuCheck
-                key={m.id}
-                checked={v.assignees.includes(m.id)}
-                disabled={!v.assignees.includes(m.id) && v.assignees.length >= LIMITS.assignees}
-                onClick={() => assign(m.id)}
-                icon={<Avatar name={personName(m)} src={m.avatar_url} size={18} />}
-              >
-                {personName(m, t("users.gone"))}
-              </MenuCheck>
-            ))}
-          </Menu>
+            empty={t("task.unassigned")}
+            chosen={v.assignees}
+            members={members}
+            people={people}
+            max={LIMITS.assignees}
+            onChange={(assignees) => set({ assignees })}
+          />
+          <People
+            label={t("task.reviewers")}
+            empty={t("task.noReviewers")}
+            chosen={v.reviewers}
+            members={members}
+            people={people}
+            max={LIMITS.reviewers}
+            onChange={(reviewers) => set({ reviewers })}
+          />
           <label className={s.k} htmlFor="task-due">
             {t("task.due")}
           </label>
@@ -629,6 +599,76 @@ export function WindowTools({ onClose, children }: { onClose: () => void; childr
       <span className={s.sep} aria-hidden="true" />
       <Button icon="x" aria-label={t("common.close")} onClick={onClose} />
     </div>
+  );
+}
+
+// Someone who left the project stays listed, so they can be taken off.
+function People({
+  label,
+  empty,
+  chosen,
+  members,
+  people,
+  max,
+  onChange,
+}: {
+  label: string;
+  empty: string;
+  chosen: string[];
+  members: User[];
+  people: User[];
+  max: number;
+  onChange: (ids: string[]) => void;
+}) {
+  const t = useT();
+  const choices = [
+    ...members,
+    ...people.filter((p) => chosen.includes(p.id) && !members.some((m) => m.id === p.id)),
+  ];
+  const who = chosen.flatMap((id) => people.filter((p) => p.id === id));
+  const toggle = (id: string) =>
+    onChange(chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id]);
+  return (
+    <>
+      <span className={`${s.k} ${s.top}`}>{label}</span>
+      <Menu
+        label={label}
+        triggerClass={s.lfield}
+        trigger={
+          <>
+            <span className={s.ico}>
+              <Icon name="userCheck" size={16} />
+            </span>
+            {who.length === 0 ? (
+              <span className={s.none}>{empty}</span>
+            ) : (
+              <span className={s.people}>
+                <span className={s.faces}>
+                  {who.slice(0, 3).map((p) => (
+                    <Avatar key={p.id} name={personName(p)} src={p.avatar_url} size={18} />
+                  ))}
+                </span>
+                <span className="ellipsis">
+                  {who.map((p) => personName(p, t("users.gone"))).join(", ")}
+                </span>
+              </span>
+            )}
+          </>
+        }
+      >
+        {choices.map((m) => (
+          <MenuCheck
+            key={m.id}
+            checked={chosen.includes(m.id)}
+            disabled={!chosen.includes(m.id) && chosen.length >= max}
+            onClick={() => toggle(m.id)}
+            icon={<Avatar name={personName(m)} src={m.avatar_url} size={18} />}
+          >
+            {personName(m, t("users.gone"))}
+          </MenuCheck>
+        ))}
+      </Menu>
+    </>
   );
 }
 

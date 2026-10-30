@@ -15,7 +15,7 @@ import (
 )
 
 var editedFields = map[string][]string{
-	"tasks": {"title", "description", "status", "priority", "labels", "assignees", "due"},
+	"tasks": {"title", "description", "status", "priority", "labels", "assignees", "reviewers", "due"},
 	"notes": {"title", "body", "shared"},
 }
 
@@ -163,14 +163,19 @@ func validateTask(app core.App, task *core.Record) error {
 		return validation.Errors{"project": validation.NewError("validation_invalid_project", "Unknown project.")}
 	}
 
-	// Only newly added people are checked: a task stays editable after one of its assignees leaves the project.
-	var kept []string
-	if !task.IsNew() {
-		kept = original.GetStringSlice("assignees")
-	}
-	for _, id := range task.GetStringSlice("assignees") {
-		if !slices.Contains(kept, id) && !slices.Contains(project.GetStringSlice("members"), id) {
-			return validation.Errors{"assignees": validation.NewError("assignee_not_member", "Every assignee must be a member of the project.")}
+	// Only newly added people are checked: a task stays editable after one of its people leaves the project.
+	for _, people := range []struct{ field, code, message string }{
+		{"assignees", "assignee_not_member", "Every assignee must be a member of the project."},
+		{"reviewers", "reviewer_not_member", "Every reviewer must be a member of the project."},
+	} {
+		var kept []string
+		if !task.IsNew() {
+			kept = original.GetStringSlice(people.field)
+		}
+		for _, id := range task.GetStringSlice(people.field) {
+			if !slices.Contains(kept, id) && !slices.Contains(project.GetStringSlice("members"), id) {
+				return validation.Errors{people.field: validation.NewError(people.code, people.message)}
+			}
 		}
 	}
 
