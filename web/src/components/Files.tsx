@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
+import { flushSync } from "react-dom";
 import { drop, fileURL, uploadFile, type Attachment, type Setter } from "../api";
 import { formatSize } from "../format";
 import { useLang, useT } from "../i18n";
@@ -457,25 +458,57 @@ function Viewer({
   const t = useT();
   const lang = useLang();
   const ref = useRef<HTMLDialogElement>(null);
-  const [long, setLong] = useState(false);
+  const track = useRef<HTMLDivElement>(null);
+  const swipe = useRef<{ x: number; y: number; t: number; dx: number; axis?: "x" | "y" }>(null);
   const a = items[index];
-  // Fixed while this file is shown, or each new token would load the original again.
-  const src = useMemo(() => fileURL(a, token), [a.id]);
-  const go = (step: number) => {
-    setLong(false);
-    onIndex((index + step + items.length) % items.length);
-  };
+  const many = items.length > 1;
+  const at = (step: number) => items[(index + step + items.length) % items.length];
+  const close = () => ref.current?.close();
+  // The list is live: by the end of a slide a file may have come or gone.
+  const latest = useRef(items);
+  useEffect(() => {
+    latest.current = items;
+  });
 
   useEffect(() => {
     ref.current?.showModal();
   }, []);
+
+  // The strip finishes the move (or springs back) and the shown file changes in that same frame, so the
+  // file just left never flashes back in the middle.
+  function settle(step: number) {
+    const el = track.current!;
+    const to = at(step).id;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const anim = el.animate(
+      [
+        { transform: getComputedStyle(el).transform },
+        { transform: `translateX(${-100 - step * 100}%)` },
+      ],
+      { duration: reduce ? 0 : 200, easing: "ease", fill: "forwards" },
+    );
+    anim.onfinish = () => {
+      el.style.transform = "";
+      const i = latest.current.findIndex((x) => x.id === to);
+      // Closed during the slide, the viewer must not come back on the next file.
+      if (step && i >= 0 && ref.current?.open) flushSync(() => onIndex(i));
+      anim.cancel();
+      // Focus on a video that just went inert drops to the page, and the arrow keys with it.
+      if (ref.current?.open && !ref.current.contains(document.activeElement)) ref.current.focus();
+    };
+  }
+
+  // A press mid-slide would start the next one from the middle of the strip.
+  const move = (step: number) => {
+    if (!track.current!.getAnimations().length) settle(step);
+  };
 
   const arrow = (step: number, className: string) => (
     <button
       type="button"
       className={className}
       aria-label={t(step < 0 ? "file.previous" : "file.next")}
-      onClick={() => go(step)}
+      onClick={() => move(step)}
     >
       <Icon name={step < 0 ? "chevronLeft" : "chevronRight"} size={22} />
     </button>
@@ -485,13 +518,14 @@ function Viewer({
     <dialog
       ref={ref}
       className={s.viewer}
+      tabIndex={-1}
       aria-label={a.name}
       onClose={onClose}
       onKeyDown={(e) => {
         // Its keys are its own: Esc here closes the viewer, not the edit it was opened from.
         e.stopPropagation();
-        if (items.length > 1 && e.key === "ArrowLeft") go(-1);
-        if (items.length > 1 && e.key === "ArrowRight") go(1);
+        if (many && e.key === "ArrowLeft") move(-1);
+        if (many && e.key === "ArrowRight") move(1);
       }}
     >
       <div className={s.top}>
@@ -523,38 +557,112 @@ function Viewer({
           aria-label={t("common.close")}
           title={t("common.close")}
           autoFocus
-          onClick={() => ref.current?.close()}
+          onClick={close}
         >
           <Icon name="x" size={20} />
         </button>
       </div>
-      <div
-        className={`${s.stage} ${long ? s.long : ""}`}
-        onClick={(e) => e.target === e.currentTarget && ref.current?.close()}
-      >
-        {isVideo(a.name) ? (
-          <video key={a.id} src={src} controls playsInline />
-        ) : (
-          <img
-            key={a.id}
-            src={src}
-            alt={a.name}
-            // A page-long screenshot cannot be read fitted to the screen, so it opens by width.
-            onLoad={(e) =>
-              setLong(e.currentTarget.naturalHeight > 2.5 * e.currentTarget.naturalWidth)
-            }
-          />
-        )}
-        {items.length > 1 && arrow(-1, `${s.nav} ${s.prev}`)}
-        {items.length > 1 && arrow(1, `${s.nav} ${s.next}`)}
+      <div className={s.stage}>
+        {/* The same swipe as the side menu's (AppShell), so the app has one gesture. */}
+        <div
+          ref={track}
+          className={many ? `${s.track} ${s.many}` : s.track}
+          onTouchStart={(e) => {
+            const p = e.touches[0];
+            if (swipe.current?.axis === "x") settle(0);
+            swipe.current = null;
+            // Two fingers zoom, a zoomed page pans, and on a video the finger is for its scrubber.
+            if (!many || e.touches.length > 1 || (visualViewport?.scale ?? 1) > 1) return;
+            if (e.target instanceof HTMLVideoElement || track.current!.getAnimations().length)
+              return;
+            swipe.current = { x: p.clientX, y: p.clientY, t: e.timeStamp, dx: 0 };
+          }}
+          onTouchMove={(e) => {
+            const sw = swipe.current;
+            if (!sw) return;
+            const dx = e.touches[0].clientX - sw.x;
+            const dy = e.touches[0].clientY - sw.y;
+            if (!sw.axis && Math.hypot(dx, dy) > 8)
+              sw.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+            if (sw.axis !== "x") return;
+            sw.dx = dx;
+            e.currentTarget.style.transform = `translateX(calc(-100% + ${dx}px))`;
+          }}
+          onTouchCancel={() => {
+            if (swipe.current?.axis === "x") settle(0);
+            swipe.current = null;
+          }}
+          onTouchEnd={(e) => {
+            const sw = swipe.current;
+            swipe.current = null;
+            if (sw?.axis !== "x") return;
+            const flick = Math.abs(sw.dx) > 30 && e.timeStamp - sw.t < 250;
+            const far = Math.abs(sw.dx) > e.currentTarget.offsetWidth / 3;
+            settle(flick || far ? -Math.sign(sw.dx) : 0);
+          }}
+        >
+          {/* Two files: the one neighbour sits on both sides, the left copy under its own key. */}
+          {many && (
+            <Slide
+              key={items.length === 2 ? `${at(-1).id}-left` : at(-1).id}
+              a={at(-1)}
+              token={token}
+              onClose={close}
+            />
+          )}
+          <Slide key={a.id} a={a} token={token} current onClose={close} />
+          {many && <Slide key={at(1).id} a={at(1)} token={token} onClose={close} />}
+        </div>
+        {many && arrow(-1, `${s.nav} ${s.prev}`)}
+        {many && arrow(1, `${s.nav} ${s.next}`)}
       </div>
       <div className={s.bottom}>
-        {items.length > 1 && arrow(-1, s.tool)}
-        {items.length > 1 && (
-          <span>{t("file.position", { n: index + 1, total: items.length })}</span>
-        )}
-        {items.length > 1 && arrow(1, s.tool)}
+        {many && arrow(-1, s.tool)}
+        {many && <span>{t("file.position", { n: index + 1, total: items.length })}</span>}
+        {many && arrow(1, s.tool)}
       </div>
     </dialog>
+  );
+}
+
+function Slide({
+  a,
+  token,
+  current = false,
+  onClose,
+}: {
+  a: Attachment;
+  token: string;
+  current?: boolean;
+  onClose: () => void;
+}) {
+  const [long, setLong] = useState(false);
+  const video = useRef<HTMLVideoElement>(null);
+  // Fixed while this file is shown, or each new token would load the original again.
+  const src = useMemo(() => fileURL(a, token), [a.id]);
+
+  useEffect(() => {
+    if (!current) video.current?.pause();
+  }, [current]);
+
+  return (
+    <div
+      className={`${s.slide} ${long ? s.long : ""}`}
+      inert={!current}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      {isVideo(a.name) ? (
+        <video ref={video} src={src} controls playsInline />
+      ) : (
+        <img
+          src={src}
+          alt={a.name}
+          // A page-long screenshot cannot be read fitted to the screen, so it opens by width.
+          onLoad={(e) =>
+            setLong(e.currentTarget.naturalHeight > 2.5 * e.currentTarget.naturalWidth)
+          }
+        />
+      )}
+    </div>
   );
 }
