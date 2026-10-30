@@ -1,6 +1,14 @@
 import { ClientResponseError } from "pocketbase";
 import { useEffect, useId, useState, type FormEvent } from "react";
-import { addUser, removeUser, setRole, users as listUsers, type User, personName } from "../api";
+import {
+  addUser,
+  onChanges,
+  removeUser,
+  setRole,
+  users as listUsers,
+  type User,
+  personName,
+} from "../api";
 import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { ConfirmDialog } from "../components/ProjectDialogs";
@@ -28,6 +36,7 @@ export function UsersPage({ me }: { me: User }) {
 
   useEffect(() => {
     reload();
+    return onChanges(["users"], reload);
   }, []);
 
   async function add(e: FormEvent) {
