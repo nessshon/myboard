@@ -1,6 +1,6 @@
 # myboard
 
-> myboard is a small self-hosted task tracker: projects with a kanban board of tasks, notes and labels. This file is the complete guide to its HTTP API for scripts and AI agents. The API is the standard PocketBase REST API plus a few myboard routes.
+> myboard is a small self-hosted task tracker: projects with a kanban board of tasks, notes and labels, and a discussion under each task with reactions and files. This file is the complete guide to its HTTP API for scripts and AI agents. The API is the standard PocketBase REST API plus a few myboard routes.
 
 - **Base URL:** the origin this file was fetched from (for `https://example.com/llms.txt` it is `https://example.com`). Below it is written as `$MB`.
 - **Authentication:** send a personal API token on every request: `Authorization: Bearer mbt_...`. A person creates it on the "Integrations" page. The token acts as that person and sees exactly what they see; there is no separate agent account. A token cannot issue or revoke tokens or change people: that is done in the web app.
@@ -28,16 +28,16 @@ Each collection is at `$MB/api/collections/<name>/records`.
 - `id`, `project` (fixed), `title` (1–120), `body` (Markdown, ≤50000), `shared` (bool; only the author or an admin may change it), `position`, `author` (set by the server, fixed), `edited` (as on a task).
 
 **comments** — the discussion under a task; read and write for members of the task's project and admins.
-- `id`, `task` (task id, fixed), `body` (Markdown, ≤5000; empty only for a comment of files alone, never just spaces), `author` (set by the server, fixed), `created`, `updated`.
+- `id`, `task` (task id, fixed), `body` (Markdown, ≤5000; never just spaces; may be empty: the web app posts a comment of files alone that way and attaches its files right after), `author` (set by the server, fixed), `created`, `updated`.
 - Only the author edits a comment; the author or an admin deletes it. Deleting a task deletes its comments.
 - To mention someone who sees the task (a project member or an admin), write `[@Name](user:USER_ID)`: they get notified, and the site shows their current name.
 
 **reactions** — emoji under a comment; read and add for members of the comment's task's project and admins.
-- `id`, `comment` (comment id), `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥, `clap` 👏, `hundred` 💯, `thinking` 🤔), `created`.
+- `id`, `comment` (comment id), `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥, `clap` 👏, `hundred` 💯, `thinking` 🤔), `created`, `updated`.
 - One of each kind per person and comment: the same again answers 400. A reaction cannot be changed; only its author removes it. Nobody is notified.
 
 **attachments** — files under a task's description or in a comment; read and add for members of the task's project and admins.
-- `id`, `task` (task id), `comment` (comment id; empty for the description), `file` (the stored name), `name` (the name it came with), `size` (bytes), `author` (the last three set by the server), `created`.
+- `id`, `task` (task id), `comment` (comment id; empty for the description), `file` (the stored name), `name` (the name it came with), `size` (bytes), `author` (the last three set by the server), `created`, `updated`.
 - Up to 50 MB each: pictures, PDF, text and logs, CSV, JSON, office documents, archives, video and audio. The server tells the type by the content; HTML, SVG and programs answer 400.
 - Only a comment's author adds files to it. A file cannot be changed; whoever uploaded it or an admin deletes it. Deleting a comment or a task deletes its files.
 - Files are protected: a link to one carries a file token that lives 3 minutes (see Recipes).
