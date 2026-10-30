@@ -58,6 +58,7 @@ export interface Task extends RecordModel {
   position: number;
   author: string;
   edited: string;
+  planned: string;
   started: string;
   submitted: string;
   closed: string;

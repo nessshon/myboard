@@ -232,9 +232,9 @@ func TestDatesFollowStatus(t *testing.T) {
 
 	url := "/api/collections/tasks/records"
 	_, body := testutil.Do(t, h, tok, http.MethodPost, url,
-		`{"project":"`+p.Id+`","title":"t","status":"done","started":"`+forged+`"}`)
-	if body["started"] != "" || body["closed"] == "" || body["closed"] == forged {
-		t.Fatalf("created closed: started %q, closed %q", body["started"], body["closed"])
+		`{"project":"`+p.Id+`","title":"t","status":"done","started":"`+forged+`","planned":"`+forged+`"}`)
+	if body["started"] != "" || body["planned"] != "" || body["closed"] == "" || body["closed"] == forged {
+		t.Fatalf("created closed: planned %q, started %q, closed %q", body["planned"], body["started"], body["closed"])
 	}
 
 	_, body = testutil.Do(t, h, tok, http.MethodPost, url,
@@ -246,21 +246,22 @@ func TestDatesFollowStatus(t *testing.T) {
 	}
 
 	for _, step := range []struct {
-		patch                      string
-		started, submitted, closed string // "kept", "set", or "" for cleared
+		patch                               string
+		planned, started, submitted, closed string // "kept", "set", or "" for cleared
 	}{
-		{`{"status":"done"}`, "kept", "", "set"},
-		{`{"status":"review"}`, "kept", "set", ""},
-		{`{"title":"renamed","started":"` + forged + `","submitted":"` + forged + `","closed":"` + forged + `"}`, "kept", "kept", "kept"},
-		{`{"status":"done"}`, "kept", "kept", "set"},
-		{`{"status":"in_progress"}`, "set", "", ""},
-		{`{"status":"todo"}`, "", "", ""},
-		{`{"status":"done"}`, "", "", "set"},
-		{`{"status":"backlog"}`, "", "", ""},
+		{`{"status":"done"}`, "", "kept", "", "set"},
+		{`{"status":"review"}`, "", "kept", "set", ""},
+		{`{"title":"renamed","planned":"` + forged + `","started":"` + forged + `","submitted":"` + forged + `","closed":"` + forged + `"}`, "kept", "kept", "kept", "kept"},
+		{`{"status":"done"}`, "", "kept", "kept", "set"},
+		{`{"status":"in_progress"}`, "", "set", "", ""},
+		{`{"status":"todo"}`, "set", "", "", ""},
+		{`{"status":"in_progress"}`, "kept", "set", "", ""},
+		{`{"status":"done"}`, "kept", "kept", "", "set"},
+		{`{"status":"backlog"}`, "", "", "", ""},
 	} {
 		before := body
 		_, body = testutil.Do(t, h, tok, http.MethodPatch, url, step.patch)
-		for field, want := range map[string]string{"started": step.started, "submitted": step.submitted, "closed": step.closed} {
+		for field, want := range map[string]string{"planned": step.planned, "started": step.started, "submitted": step.submitted, "closed": step.closed} {
 			got, _ := body[field].(string)
 			ok := map[string]bool{
 				"kept": got == before[field],

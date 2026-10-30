@@ -471,21 +471,27 @@ function TaskBody({
             <dl className={s.dates}>
               <dt>{t("task.created")}</dt>
               <dd>{day(task.created)}</dd>
+              {task.planned && (
+                <>
+                  <dt>{t("status.todo")}</dt>
+                  <dd>{day(task.planned)}</dd>
+                </>
+              )}
               {task.started && (
                 <>
-                  <dt>{t("task.started")}</dt>
+                  <dt>{t("status.in_progress")}</dt>
                   <dd>{day(task.started)}</dd>
                 </>
               )}
               {task.submitted && (
                 <>
-                  <dt>{t("task.submitted")}</dt>
+                  <dt>{t("status.review")}</dt>
                   <dd>{day(task.submitted)}</dd>
                 </>
               )}
               {task.closed && (
                 <>
-                  <dt>{t("task.closed.done")}</dt>
+                  <dt>{t("status.done")}</dt>
                   <dd>{day(task.closed)}</dd>
                 </>
               )}

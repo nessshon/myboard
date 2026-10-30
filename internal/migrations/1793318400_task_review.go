@@ -8,9 +8,9 @@ import (
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
-// The review status before done, with reviewers next to assignees. The dates are set by the server on a status change
-// (internal/tasks); tasks closed before this stay without dates. The first schema (init) had a "cancelled" status; such a
-// task now counts as done.
+// The review status before done, with reviewers next to assignees, and a date for every column but the backlog, which
+// has the creation date. The dates are set by the server on a status change (internal/tasks); tasks moved before this
+// stay without dates. The first schema (init) had a "cancelled" status; such a task now counts as done.
 func init() {
 	m.Register(func(app core.App) error {
 		if _, err := app.DB().Update("tasks", dbx.Params{"status": "done"}, dbx.HashExp{"status": "cancelled"}).Execute(); err != nil {
@@ -26,6 +26,7 @@ func init() {
 		}
 		tasks.Fields.Add(
 			&core.RelationField{Name: "reviewers", CollectionId: users.Id, MaxSelect: 10},
+			&core.DateField{Name: "planned"},
 			&core.DateField{Name: "started"},
 			&core.DateField{Name: "submitted"},
 			&core.DateField{Name: "closed"},
@@ -40,6 +41,7 @@ func init() {
 			return err
 		}
 		tasks.Fields.RemoveByName("reviewers")
+		tasks.Fields.RemoveByName("planned")
 		tasks.Fields.RemoveByName("started")
 		tasks.Fields.RemoveByName("submitted")
 		tasks.Fields.RemoveByName("closed")

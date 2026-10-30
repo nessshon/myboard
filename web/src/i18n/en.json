@@ -131,9 +131,6 @@
     "other": "{count} tasks"
   },
   "task.created": "Created",
-  "task.started": "In progress since",
-  "task.submitted": "In review since",
-  "task.closed.done": "Done",
   "task.edited": "Edited",
   "task.columnEmpty": "No tasks",
   "task.dragHandle": "Drag",

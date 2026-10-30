@@ -133,7 +133,7 @@ function CardBody({
             </span>
           )}
           {closed ? (
-            <span className={`${s.due} ${s.finished}`} title={t("task.closed.done")}>
+            <span className={`${s.due} ${s.finished}`} title={t("status.done")}>
               <Icon name="check" size={12} />
               {formatDate(task.closed, lang)}
             </span>

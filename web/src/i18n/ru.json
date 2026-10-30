@@ -137,9 +137,6 @@
     "other": "{count} задачи"
   },
   "task.created": "Создана",
-  "task.started": "В работе с",
-  "task.submitted": "На проверке с",
-  "task.closed.done": "Выполнена",
   "task.edited": "Изменена",
   "task.columnEmpty": "Нет задач",
   "task.dragHandle": "Перетащить",
