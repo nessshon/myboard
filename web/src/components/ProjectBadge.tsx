@@ -30,6 +30,16 @@ export function projectColor(key: string, color?: string) {
   return PROJECT_COLORS[hash % DERIVED];
 }
 
+// By grapheme, so an emoji, a flag or a family of emoji stays whole; Firefox before 125 has no Intl.Segmenter
+// and gets the first code point, which still keeps a plain emoji whole.
+export function initial(name: string) {
+  const text = name.trim();
+  const first = Intl.Segmenter
+    ? [...new Intl.Segmenter().segment(text)][0]?.segment
+    : Array.from(text)[0];
+  return (first ?? "?").toUpperCase();
+}
+
 export function ProjectBadge({
   name,
   projectKey,
@@ -53,7 +63,7 @@ export function ProjectBadge({
         background: projectColor(projectKey, color),
       }}
     >
-      <span className="letter">{(name.trim()[0] ?? "?").toUpperCase()}</span>
+      <span className="letter">{initial(name)}</span>
     </span>
   );
 }

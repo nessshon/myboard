@@ -7,7 +7,7 @@ import { navigate } from "../router";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
-import { PROJECT_COLORS, projectColor } from "./ProjectBadge";
+import { initial, PROJECT_COLORS, projectColor } from "./ProjectBadge";
 import { Dialog } from "./Dialog";
 import { Select } from "./Select";
 import { toast } from "./Toast";
@@ -194,7 +194,7 @@ function ProjectForm({
               style={{ background: c, color: c }}
               onClick={() => setColor(c)}
             >
-              {(name.trim()[0] ?? "?").toUpperCase()}
+              {initial(name)}
             </button>
           ))}
         </div>
