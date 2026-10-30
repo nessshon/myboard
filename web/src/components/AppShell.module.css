@@ -253,26 +253,13 @@
 .add {
   flex: none;
   margin-left: auto;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--shadow-sm);
 }
 
-.add:hover {
-  border-color: var(--border-strong);
-}
-
+/* Centred where the rail's divider line is (9px + 22px / 2), for a 28px button. */
 .side:not(.wide) .add {
   position: absolute;
-  left: 8px;
-  width: 24px;
+  left: 6px;
   margin: 0;
-  padding: 0;
-  justify-content: center;
-  border-color: transparent;
-  background: none;
-  box-shadow: none;
 }
 
 .archive {
