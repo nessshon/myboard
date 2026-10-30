@@ -6,6 +6,8 @@ import {
   indexAmong,
   personName,
   positionAt,
+  PRIORITIES,
+  STATUSES,
   renumber,
   useProjectData,
   patch,
@@ -17,11 +19,11 @@ import {
   type Task,
   type User,
 } from "../api";
-import { usePhone } from "../browser";
+import { load, save, usePhone } from "../browser";
 import { Avatar } from "../components/Avatar";
 import { Board, MobileBoard } from "../components/Board";
 import { Button } from "../components/Button";
-import { Filter, FilterReset, type FilterOption } from "../components/Filter";
+import { Filter, FilterReset, Order, type FilterOption } from "../components/Filter";
 import { Icon } from "../components/Icon";
 import { LabelsDialog } from "../components/LabelsDialog";
 import { MenuItem, MenuSeparator } from "../components/Menu";
@@ -39,6 +41,39 @@ const byPosition = (a: Row, b: Row) => a.position - b.position;
 const closedAt = (x: Task) => (isClosed(x.status) && x.closed) || "";
 const boardOrder = (a: Task, b: Task) =>
   closedAt(b).localeCompare(closedAt(a)) || a.position - b.position;
+
+const ORDERS = ["manual", "date", "due", "priority"] as const;
+type TaskOrder = { by: (typeof ORDERS)[number]; desc: boolean };
+// Each column has its own date: when the task got there, or its creation in the backlog.
+const columnDate = {
+  backlog: "created",
+  todo: "planned",
+  in_progress: "started",
+  review: "submitted",
+  done: "closed",
+} as const;
+// desc is where a fresh pick starts: the nearest due date, the most urgent and the latest first.
+const sorts = {
+  due: { desc: false, key: (x: Task) => x.due },
+  priority: { desc: true, key: (x: Task) => PRIORITIES.indexOf(x.priority) },
+  date: { desc: true, key: (x: Task) => x[columnDate[x.status]] },
+};
+// A task without the value goes last either way; ties keep the manual order.
+const compare = (a: string | number, b: string | number, desc: boolean) =>
+  a === "" || b === "" ? +(a === "") - +(b === "") : (a < b ? -1 : a > b ? 1 : 0) * (desc ? -1 : 1);
+const columnOrder =
+  ({ by, desc }: TaskOrder) =>
+  (a: Task, b: Task) =>
+    STATUSES.indexOf(a.status) - STATUSES.indexOf(b.status) ||
+    (by === "manual" ? 0 : compare(sorts[by].key(a), sorts[by].key(b), desc));
+
+function savedOrder(key: string): TaskOrder {
+  try {
+    const o = JSON.parse(load(key) ?? "");
+    if (ORDERS.includes(o.by)) return { by: o.by, desc: !!o.desc };
+  } catch {}
+  return { by: "manual", desc: false };
+}
 
 type TaskFilter = { assignee: string[]; author: string[]; labels: string[] };
 const noFilter: TaskFilter = { assignee: [], author: [], labels: [] };
@@ -105,6 +140,12 @@ export function ProjectPage({
   const [creating, setCreating] = useState(false);
   const [picked, setOnly] = useState(noFilter);
   const [editingLabels, setEditingLabels] = useState(false);
+  const orderKey = `mb.order.${project.id}`;
+  const [order, setOrder] = useState(() => savedOrder(orderKey));
+  const pickOrder = (next: TaskOrder) => {
+    setOrder(next);
+    save(orderKey, JSON.stringify(next));
+  };
 
   const base = `/p/${project.key.toLowerCase()}`;
   const sortedTasks = useMemo(() => tasks && [...tasks].sort(boardOrder), [tasks]);
@@ -128,8 +169,12 @@ export function ProjectPage({
   }, [picked, labels, tasks, project.members]);
   const filtering = !!(only.assignee.length || only.author.length || only.labels.length);
   const shownTasks = useMemo(
-    () => sortedTasks && (filtering ? sortedTasks.filter((x) => fits(x, only)) : sortedTasks),
-    [sortedTasks, only, filtering],
+    () =>
+      sortedTasks &&
+      (filtering ? sortedTasks.filter((x) => fits(x, only)) : [...sortedTasks]).sort(
+        columnOrder(order),
+      ),
+    [sortedTasks, only, filtering, order],
   );
   const open = taskNumber === undefined ? undefined : tasks?.find((x) => x.number === taskNumber);
 
@@ -145,18 +190,24 @@ export function ProjectPage({
   const findNote = (id: string) => notes?.find((x) => x.id === id);
 
   const moveTask = (id: string, status: Status, index: number) => {
+    // A picked order places the card itself; across columns it goes to the top of the manual order.
+    const sorted = order.by !== "manual";
+    if (sorted && findTask(id)?.status === status) return;
     const column = sortedTasks!.filter((x) => x.status === status && x.id !== id);
     const shown = shownTasks!.filter((x) => x.status === status && x.id !== id);
-    // A closed column is ordered by date, so the card goes to its top at once; the server ignores this
-    // closed and sets its own.
-    const closing = isClosed(status) && { closed: new Date().toISOString().replace("T", " ") };
+    // A closed column, and any column ordered by date, puts a card that just got there at its top at once; the
+    // server ignores this date and sets its own. The backlog's date is the creation, which a move keeps.
+    const dated = status !== "backlog" &&
+      findTask(id)?.status !== status && {
+        [columnDate[status]]: new Date().toISOString().replace("T", " "),
+      };
     return move(
       "tasks",
       setTasks,
       column,
       findTask(id),
-      closing ? 0 : indexAmong(column, shown, index),
-      { status, ...closing },
+      isClosed(status) || sorted ? 0 : indexAmong(column, shown, index),
+      { status, ...dated },
       failed,
     );
   };
@@ -293,6 +344,16 @@ export function ProjectPage({
               </Filter>
             )}
             {filtering && <FilterReset onClick={() => setOnly(noFilter)} />}
+            <Order
+              title={t("order.title")}
+              options={ORDERS.map((id) => ({ id, name: t(`order.${id}`) }))}
+              chosen={order.by}
+              onChange={(by) =>
+                by !== order.by && pickOrder({ by, desc: by !== "manual" && sorts[by].desc })
+              }
+              desc={order.by === "manual" ? undefined : order.desc}
+              onDesc={(desc) => pickOrder({ ...order, desc })}
+            />
           </div>
         )}
         {filtering && shownTasks?.length === 0 ? (

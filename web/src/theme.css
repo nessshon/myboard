@@ -328,6 +328,19 @@ textarea.input {
   color: var(--accent-text);
 }
 
+/* One choice of several: a bare check, so it does not read as a list of boxes to tick. */
+[role="menuitemradio"] > .tick {
+  border: 0;
+}
+
+[role="menuitemradio"][aria-checked="true"] > .tick {
+  background: none;
+}
+
+[role="menuitemradio"][aria-checked="true"] > .tick > svg {
+  color: var(--text);
+}
+
 .letter {
   display: block;
   line-height: 1;

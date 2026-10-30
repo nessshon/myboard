@@ -16,6 +16,14 @@ const paths = {
       <path d="M12 12v9" />
     </>
   ),
+  arrowDownUp: (
+    <>
+      <path d="m3 16 4 4 4-4" />
+      <path d="M7 20V4" />
+      <path d="m21 8-4-4-4 4" />
+      <path d="M17 4v16" />
+    </>
+  ),
   blocks: (
     <>
       <path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2" />
@@ -159,6 +167,18 @@ const paths = {
       <circle cx="12" cy="12" r="1" />
       <circle cx="19" cy="12" r="1" />
       <circle cx="5" cy="12" r="1" />
+    </>
+  ),
+  moveDown: (
+    <>
+      <path d="M8 18L12 22L16 18" />
+      <path d="M12 2V22" />
+    </>
+  ),
+  moveUp: (
+    <>
+      <path d="M8 6L12 2L16 6" />
+      <path d="M12 2V22" />
     </>
   ),
   paperclip: (

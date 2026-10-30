@@ -17,7 +17,9 @@ export function Menu({ label, trigger, triggerClass, align = "right", children }
   const menu = useRef<HTMLDivElement>(null);
 
   const items = () => [
-    ...menu.current!.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemcheckbox"]'),
+    ...menu.current!.querySelectorAll<HTMLElement>(
+      '[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]',
+    ),
   ];
   function walk(e: KeyEvent) {
     const list = items();
@@ -104,6 +106,7 @@ export function MenuItem({ icon, onClick, danger, children }: ItemProps) {
 
 type CheckProps = {
   checked: boolean;
+  radio?: boolean;
   disabled?: boolean;
   onClick: () => void;
   icon?: ReactNode;
@@ -111,11 +114,19 @@ type CheckProps = {
   children: ReactNode;
 };
 
-export function MenuCheck({ checked, disabled, onClick, icon, count, children }: CheckProps) {
+export function MenuCheck({
+  checked,
+  radio,
+  disabled,
+  onClick,
+  icon,
+  count,
+  children,
+}: CheckProps) {
   return (
     <button
       type="button"
-      role="menuitemcheckbox"
+      role={radio ? "menuitemradio" : "menuitemcheckbox"}
       aria-checked={checked}
       disabled={disabled}
       className={s.item}

@@ -31,6 +31,49 @@
   }
 }
 
+/* An order is always on, unlike a filter, so its border is solid. Its menu and its direction share the border, and
+   the menu opens under both. */
+.order {
+  margin-left: auto;
+  border-style: solid;
+}
+
+.order > div {
+  position: static;
+}
+
+.order:has(.way) .trigger {
+  border-radius: calc(var(--r-sm) - 1px) 0 0 calc(var(--r-sm) - 1px);
+}
+
+.way {
+  width: 28px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--border-strong);
+  border-radius: 0 calc(var(--r-sm) - 1px) calc(var(--r-sm) - 1px) 0;
+  color: inherit;
+}
+
+@media (hover: hover) {
+  .order:hover {
+    background: none;
+    color: var(--muted);
+  }
+
+  .order .trigger:hover,
+  .way:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+}
+
+.narrow {
+  display: none;
+}
+
 .filter > div {
   height: 100%;
 }
@@ -117,6 +160,11 @@
   top: calc(100% + 6px);
 }
 
+/* A few short choices; the filters' width would leave the menu half empty. */
+.order [role="menu"] {
+  width: max-content;
+}
+
 @media (max-width: 640px) {
   .filter {
     height: 36px;
@@ -149,5 +197,31 @@
   .filter [role="menu"] {
     left: 0;
     right: auto;
+  }
+
+  /* The full label does not fit beside the filters on a phone; an icon stands for it, the menu says the rest. */
+  .order .label,
+  .order .wide {
+    display: none;
+  }
+
+  .order .narrow {
+    display: inline;
+  }
+
+  .order .trigger,
+  .way {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .order {
+    position: relative;
+  }
+
+  .order [role="menu"] {
+    left: auto;
+    right: 0;
   }
 }

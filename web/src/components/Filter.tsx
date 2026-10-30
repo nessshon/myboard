@@ -58,6 +58,59 @@ export function Filter({ title, options, chosen, onChange, children }: Props) {
   );
 }
 
+// desc is left out where the order has no direction, a manual one.
+export function Order<T extends string>({
+  title,
+  options,
+  chosen,
+  onChange,
+  desc,
+  onDesc,
+}: {
+  title: string;
+  options: { id: T; name: string }[];
+  chosen: T;
+  onChange: (id: T) => void;
+  desc?: boolean;
+  onDesc: (desc: boolean) => void;
+}) {
+  const t = useT();
+  const picked = options.find((o) => o.id === chosen)!;
+  const label = `${title}: ${picked.name.toLowerCase()}`;
+  return (
+    <div className={`${s.filter} ${s.order}`}>
+      <Menu
+        label={label}
+        triggerClass={s.trigger}
+        trigger={
+          <>
+            <span className={s.label}>{label}</span>
+            <Icon name="chevronDown" size={14} className={`${s.chev} ${s.wide}`} />
+            <Icon name="arrowDownUp" size={14} className={s.narrow} />
+          </>
+        }
+      >
+        {options.map((o) => (
+          <MenuCheck key={o.id} radio checked={o.id === chosen} onClick={() => onChange(o.id)}>
+            {o.name}
+          </MenuCheck>
+        ))}
+      </Menu>
+      {desc !== undefined && (
+        <button
+          type="button"
+          className={s.way}
+          aria-label={t(desc ? "order.desc" : "order.asc")}
+          title={t(desc ? "order.desc" : "order.asc")}
+          onClick={() => onDesc(!desc)}
+        >
+          <Icon name={desc ? "moveDown" : "moveUp"} size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function FilterReset({ onClick }: { onClick: () => void }) {
   const t = useT();
   return (
