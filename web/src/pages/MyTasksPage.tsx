@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { myOpenTasks, onChanges, type Project, type User } from "../api";
+import { useEffect } from "react";
+import { useMyOpenTasks, type Project, type User } from "../api";
 import { OpenTask } from "../components/OpenTask";
 import { Section } from "../components/Section";
 import { TaskList, TaskRow } from "../components/TaskRow";
 import { toast } from "../components/Toast";
 import { useT } from "../i18n";
-import { navigate } from "../router";
+import { findProject, navigate } from "../router";
 
 export function MyTasksPage({
   me,
@@ -19,8 +19,8 @@ export function MyTasksPage({
   task?: { key: string; number: number };
 }) {
   const t = useT();
-  const [tasks, setTasks] = useState<Awaited<ReturnType<typeof myOpenTasks>> | null>(null);
-  const project = task && projects.find((p) => p.key.toLowerCase() === task.key);
+  const rows = useMyOpenTasks(me.id, () => toast(t("common.loadFailed")));
+  const project = task && findProject(projects, task.key);
 
   useEffect(() => {
     if (!task || !projects.length || project) return;
@@ -28,17 +28,7 @@ export function MyTasksPage({
     navigate("/tasks", true);
   }, [task, projects.length, project]);
 
-  useEffect(() => {
-    const reload = () =>
-      myOpenTasks(me.id)
-        .then(setTasks)
-        .catch(() => toast(t("common.loadFailed")));
-    reload();
-    return onChanges(["tasks"], reload);
-  }, [me.id]);
-
-  if (!tasks) return null;
-  const rows = tasks.filter((x) => x.expand?.project);
+  if (!rows) return null;
   return (
     <div className="page">
       {project && (

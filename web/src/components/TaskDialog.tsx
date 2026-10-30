@@ -24,7 +24,16 @@ import { Counter } from "./Counter";
 import { Dialog } from "./Dialog";
 import { Discussion } from "./Discussion";
 import { Editor } from "./Editor";
-import { Files, forget, pick, useAttach, useFileEdit, useUploads, type Upload } from "./Files";
+import {
+  Files,
+  forget,
+  pick,
+  unpick,
+  useAttach,
+  useFileEdit,
+  useUploads,
+  type Upload,
+} from "./Files";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
 import { Menu, MenuCheck, MenuItem } from "./Menu";
@@ -212,12 +221,6 @@ function TaskBody({
     else setPicked((p) => [...p, ...fit]);
   }
 
-  function unpick(key: string) {
-    setPicked((p) => {
-      p.filter((u) => u.key === key).forEach(forget);
-      return p.filter((u) => u.key !== key);
-    });
-  }
   const files = task && (
     <Files
       items={descFiles}
@@ -291,7 +294,12 @@ function TaskBody({
                   onDismiss={uploads.dismiss}
                 />
               ) : (
-                <Files items={[]} uploads={picked} token={token} onDismiss={unpick} />
+                <Files
+                  items={[]}
+                  uploads={picked}
+                  token={token}
+                  onDismiss={(key) => setPicked((p) => unpick(p, key))}
+                />
               )
             }
             counter={<Counter value={description} max={LIMITS.taskDescription} />}

@@ -27,7 +27,16 @@ import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
 import { Editor } from "./Editor";
-import { Files, forget, pick, useAttach, useFileEdit, type Upload, type useUploads } from "./Files";
+import {
+  Files,
+  forget,
+  pick,
+  unpick,
+  useAttach,
+  useFileEdit,
+  type Upload,
+  type useUploads,
+} from "./Files";
 import { Icon } from "./Icon";
 import { Markdown, mentionOf, mentions } from "./Markdown";
 import { Menu, MenuItem } from "./Menu";
@@ -261,13 +270,6 @@ export function Discussion({
     setPicked((p) => [...p, ...fresh]);
   }
 
-  function unpick(key: string) {
-    setPicked((p) => {
-      p.filter((u) => u.key === key).forEach(forget);
-      return p.filter((u) => u.key !== key);
-    });
-  }
-
   // The comment goes first and its files after it, so a file never hangs without its comment.
   async function send() {
     const body = toStored(text.trim(), sendPicks.current);
@@ -477,7 +479,14 @@ export function Discussion({
       })}
       <Editor
         attach={attach}
-        files={<Files items={[]} uploads={picked} token={token} onDismiss={unpick} />}
+        files={
+          <Files
+            items={[]}
+            uploads={picked}
+            token={token}
+            onDismiss={(key) => setPicked((p) => unpick(p, key))}
+          />
+        }
         counter={<Counter value={text} max={LIMITS.comment} />}
         actions={
           <Button

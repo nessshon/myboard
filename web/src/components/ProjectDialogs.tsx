@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { create, membersOf, remove, update, type Project, type User, personName } from "../api";
 import { useT, type Key } from "../i18n";
 import { LIMITS } from "../limits";
-import { navigate } from "../router";
+import { navigate, projectPath } from "../router";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
@@ -87,7 +87,7 @@ export function EditProjectDialog({
         onClose={onClose}
         onSaved={(p) => {
           onClose();
-          if (p.key !== project.key) navigate(`/p/${p.key.toLowerCase()}`, true);
+          if (p.key !== project.key) navigate(projectPath(p.key), true);
         }}
       />
     </Dialog>

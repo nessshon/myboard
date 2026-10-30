@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useRef } from "react";
 import type { Project } from "../api";
 import { useT } from "../i18n";
+import { projectPath } from "../router";
 import { useDragSensors } from "./Board";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
@@ -99,7 +100,7 @@ function Row({
         </button>
       )}
       <a
-        href={`/p/${project.key.toLowerCase()}`}
+        href={projectPath(project.key)}
         className={s.item}
         aria-current={current ? "page" : undefined}
         title={project.name}

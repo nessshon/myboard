@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { flushSync } from "react-dom";
-import { drop, fileURL, uploadFile, type Attachment, type Setter } from "../api";
+import { drop, fileURL, put, uploadFile, type Attachment, type Setter } from "../api";
 import { formatSize } from "../format";
 import { useLang, useT } from "../i18n";
 import { ATTACHMENT_EXTENSIONS, LIMITS } from "../limits";
@@ -50,6 +50,11 @@ export function pick(files: File[], task: string, t: ReturnType<typeof useT>): U
 
 export const forget = (u: Upload) => u.preview && URL.revokeObjectURL(u.preview);
 
+export function unpick(uploads: Upload[], key: string) {
+  uploads.filter((u) => u.key === key).forEach(forget);
+  return uploads.filter((u) => u.key !== key);
+}
+
 // One at a time: files land in the order they were picked, and a phone has one thin uplink anyway.
 const PARALLEL = 1;
 
@@ -66,7 +71,7 @@ export function useUploads(setAttachments: Setter<Attachment>) {
       running.current++;
       uploadFile({ task: u.task, comment: u.comment }, u.file, (share) => change(u.key, { share }))
         .then((row) => {
-          setAttachments((rows) => rows && [...rows.filter((r) => r.id !== row.id), row]);
+          put(setAttachments, row);
           setUploads((us) => us.filter((x) => x.key !== u.key));
           forget(u);
           done(row);

@@ -26,6 +26,13 @@ function parse(path: string): Route {
   return m[2] ? { name: "task", key: m[1], number: Number(m[2]) } : { name: "project", key: m[1] };
 }
 
+export const projectPath = (key: string) => `/p/${key.toLowerCase()}`;
+
+export const findProject = <T extends { key: string }>(
+  projects: T[] | null | undefined,
+  key: string | undefined,
+) => projects?.find((p) => p.key.toLowerCase() === key);
+
 function lowerPath(href: string) {
   const url = new URL(href, location.href);
   url.pathname = url.pathname.toLowerCase().replace(/(.)\/+$/, "$1");

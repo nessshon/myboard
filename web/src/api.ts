@@ -249,17 +249,19 @@ export const myOpenCount = async (userId: string) =>
 
 const OPEN_ORDER: Status[] = ["review", "in_progress", "todo", "backlog"];
 
-export const myOpenTasks = async (userId: string) => {
+const myOpenTasks = async (userId: string) => {
   const rows = await pb.collection("tasks").getFullList<Task & { expand?: { project?: Project } }>({
     filter: pb.filter(MINE, { id: userId }),
     sort: "position",
     expand: "project",
   });
-  return rows.sort(
-    (a, b) =>
-      OPEN_ORDER.indexOf(a.status) - OPEN_ORDER.indexOf(b.status) ||
-      (a.due || "9999").localeCompare(b.due || "9999"),
-  );
+  return rows
+    .filter((x) => x.expand?.project)
+    .sort(
+      (a, b) =>
+        OPEN_ORDER.indexOf(a.status) - OPEN_ORDER.indexOf(b.status) ||
+        (a.due || "9999").localeCompare(b.due || "9999"),
+    );
 };
 
 export function onChanges(collections: string[], reload: () => void) {
@@ -273,6 +275,16 @@ export function onChanges(collections: string[], reload: () => void) {
     clearTimeout(timer);
     stops.forEach((s) => s.then((stop) => stop()).catch(() => {}));
   };
+}
+
+export function useMyOpenTasks(userId: string, failed: () => void) {
+  const [tasks, setTasks] = useState<Awaited<ReturnType<typeof myOpenTasks>> | null>(null);
+  useEffect(() => {
+    const reload = () => myOpenTasks(userId).then(setTasks).catch(failed);
+    reload();
+    return onChanges(["tasks"], reload);
+  }, [userId]);
+  return tasks;
 }
 
 function live<T extends RecordModel>(
@@ -393,7 +405,6 @@ export function uploadFile(
 
 export function useProjectData(projectId: string | undefined, failed: () => void) {
   const [tasks, setTasks] = useState<Task[] | null>(null);
-  const [notes, setNotes] = useState<Note[] | null>(null);
   const [labels, setLabels] = useState<Label[] | null>(null);
   const [comments, setComments] = useState<Comment[] | null>(null);
 
@@ -402,7 +413,6 @@ export function useProjectData(projectId: string | undefined, failed: () => void
     const filter = pb.filter("project = {:id}", { id: projectId });
     const stops = [
       live("tasks", filter, "position", setTasks, failed),
-      live("notes", filter, "position", setNotes, failed),
       live("labels", filter, "name", setLabels, failed),
       live(
         "comments",
@@ -415,13 +425,26 @@ export function useProjectData(projectId: string | undefined, failed: () => void
     return () => {
       stops.forEach((stop) => stop());
       setTasks(null);
-      setNotes(null);
       setLabels(null);
       setComments(null);
     };
   }, [projectId]);
 
-  return { tasks, notes, labels, comments, setTasks, setNotes, setLabels, setComments };
+  return { tasks, labels, comments, setTasks, setLabels, setComments };
+}
+
+// Only the project page shows them; a task opened from the home page or my tasks does not.
+export function useNotes(projectId: string, failed: () => void) {
+  const [notes, setNotes] = useState<Note[] | null>(null);
+  useEffect(() => {
+    const filter = pb.filter("project = {:id}", { id: projectId });
+    const stop = live("notes", filter, "position", setNotes, failed);
+    return () => {
+      stop();
+      setNotes(null);
+    };
+  }, [projectId]);
+  return [notes, setNotes] as const;
 }
 
 type Writable =
@@ -480,7 +503,10 @@ export async function renumber(collection: "tasks" | "notes", ids: string[]) {
 export type Row = Task | Note;
 export type Setter<T> = Dispatch<SetStateAction<T[] | null>>;
 
-function put<T extends Row | Label | Comment | Reaction | Attachment>(set: Setter<T>, row: T) {
+export function put<T extends Row | Label | Comment | Reaction | Attachment>(
+  set: Setter<T>,
+  row: T,
+) {
   set((rows) => rows && [...rows.filter((r) => r.id !== row.id), row]);
 }
 

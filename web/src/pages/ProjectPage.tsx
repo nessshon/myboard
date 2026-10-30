@@ -9,6 +9,7 @@ import {
   PRIORITIES,
   STATUSES,
   renumber,
+  useNotes,
   useProjectData,
   patch,
   drop,
@@ -32,7 +33,7 @@ import { restoreProject } from "../components/ProjectHeader";
 import { TaskDialog, type TaskFields } from "../components/TaskDialog";
 import { toast } from "../components/Toast";
 import { useT } from "../i18n";
-import { navigate } from "../router";
+import { navigate, projectPath } from "../router";
 import s from "./ProjectPage.module.css";
 
 const byPosition = (a: Row, b: Row) => a.position - b.position;
@@ -134,8 +135,12 @@ export function ProjectPage({
 }) {
   const t = useT();
   const tasksHead = useId();
-  const { tasks, notes, labels, comments, setTasks, setNotes, setLabels, setComments } =
-    useProjectData(project.id, () => toast(t("common.loadFailed")));
+  const loadFailed = () => toast(t("common.loadFailed"));
+  const { tasks, labels, comments, setTasks, setLabels, setComments } = useProjectData(
+    project.id,
+    loadFailed,
+  );
+  const [notes, setNotes] = useNotes(project.id, loadFailed);
   const isPhone = usePhone();
   const [creating, setCreating] = useState(false);
   const [picked, setOnly] = useState(noFilter);
@@ -147,7 +152,7 @@ export function ProjectPage({
     save(orderKey, JSON.stringify(next));
   };
 
-  const base = `/p/${project.key.toLowerCase()}`;
+  const base = projectPath(project.key);
   const sortedTasks = useMemo(() => tasks && [...tasks].sort(boardOrder), [tasks]);
   const sortedNotes = useMemo(() => notes && [...notes].sort(byPosition), [notes]);
   const sortedLabels = useMemo(
@@ -281,7 +286,6 @@ export function ProjectPage({
           me={me}
           notes={sortedNotes}
           people={people}
-          isPhone={isPhone}
           onMove={moveNote}
           onCreate={createNote}
           onPatch={(id, data) => patch("notes", setNotes, findNote(id), data, failed)}

@@ -3,6 +3,7 @@ import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dn
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { indexAmong, personName, type Note, type Project, type User } from "../api";
+import { usePhone } from "../browser";
 import { formatDate } from "../format";
 import { useLang, useT } from "../i18n";
 import { LIMITS } from "../limits";
@@ -29,7 +30,6 @@ type Props = {
   me: User;
   notes: Note[] | null;
   people: User[];
-  isPhone: boolean;
   projects?: Project[];
   onMove?: (id: string, index: number) => void;
   onCreate?: (draft: Draft) => Promise<Note | undefined>;
@@ -46,18 +46,9 @@ const excerpt = (body: string) =>
     .replace(/[#>*`~|]/g, "")
     .replace(/(^|[^\p{L}\p{N}_])_+|_+(?=[^\p{L}\p{N}_]|$)/gu, "$1");
 
-export function Notes({
-  me,
-  notes,
-  people,
-  isPhone,
-  projects,
-  onMove,
-  onCreate,
-  onPatch,
-  onDelete,
-}: Props) {
+export function Notes({ me, notes, people, projects, onMove, onCreate, onPatch, onDelete }: Props) {
   const t = useT();
+  const isPhone = usePhone();
   const headId = useId();
   const sensors = useDragSensors();
   const [open, setOpen] = useState<string | null>(null);

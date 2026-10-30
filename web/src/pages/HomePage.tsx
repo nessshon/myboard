@@ -3,15 +3,14 @@ import {
   membersOf,
   drop,
   myNotes,
-  myOpenTasks,
   patch,
   onChanges,
   type Note,
   type Project,
   type User,
   personName,
+  useMyOpenTasks,
 } from "../api";
-import { usePhone } from "../browser";
 import { Avatar } from "../components/Avatar";
 import { Button, LinkButton } from "../components/Button";
 import { Notes } from "../components/Notes";
@@ -21,7 +20,7 @@ import { Section } from "../components/Section";
 import { TaskList, TaskRow } from "../components/TaskRow";
 import { toast } from "../components/Toast";
 import { useT } from "../i18n";
-import { navigate } from "../router";
+import { findProject, navigate, projectPath } from "../router";
 import s from "./HomePage.module.css";
 
 const SHOWN = 5;
@@ -42,11 +41,10 @@ export function HomePage({
   onNewProject: () => void;
 }) {
   const t = useT();
-  const isPhone = usePhone();
-  const [tasks, setTasks] = useState<Awaited<ReturnType<typeof myOpenTasks>> | null>(null);
+  const rows = useMyOpenTasks(me.id, () => toast(t("common.loadFailed")));
   const [notes, setNotes] = useState<Note[] | null>(null);
   const active = projects?.filter((p) => !p.archived) ?? null;
-  const open = task && projects?.find((p) => p.key.toLowerCase() === task.key);
+  const open = task && findProject(projects, task.key);
   const isAdmin = me.role === "admin";
 
   useEffect(() => {
@@ -56,23 +54,17 @@ export function HomePage({
   }, [task, projects, open]);
 
   useEffect(() => {
-    const loadFailed = () => toast(t("common.loadFailed"));
-    const reloadTasks = () => myOpenTasks(me.id).then(setTasks).catch(loadFailed);
-    const reloadNotes = () => myNotes(me.id).then(setNotes).catch(loadFailed);
-    reloadTasks();
-    reloadNotes();
-    const stopTasks = onChanges(["tasks"], reloadTasks);
-    const stopNotes = onChanges(["notes"], reloadNotes);
-    return () => {
-      stopTasks();
-      stopNotes();
-    };
+    const reload = () =>
+      myNotes(me.id)
+        .then(setNotes)
+        .catch(() => toast(t("common.loadFailed")));
+    reload();
+    return onChanges(["notes"], reload);
   }, [me.id]);
 
   const failed = () => toast(t("common.saveFailed"));
   const actionFailed = () => toast(t("common.actionFailed"));
   const findNote = (id: string) => notes?.find((n) => n.id === id);
-  const rows = tasks?.filter((x) => x.expand?.project) ?? null;
 
   if (!rows || !active || !notes) return null;
   return (
@@ -127,7 +119,7 @@ export function HomePage({
         {active.length > 0 && (
           <div className={s.projects}>
             {active.map((p) => (
-              <a key={p.id} className={s.card} href={`/p/${p.key.toLowerCase()}`}>
+              <a key={p.id} className={s.card} href={projectPath(p.key)}>
                 <span className={s.top}>
                   <ProjectBadge name={p.name} projectKey={p.key} color={p.color} size={32} />
                   <span className={s.name}>{p.name}</span>
@@ -153,7 +145,6 @@ export function HomePage({
         me={me}
         notes={notes}
         people={people}
-        isPhone={isPhone}
         projects={projects ?? []}
         onPatch={(id, data) => patch("notes", setNotes, findNote(id), data, failed)}
         onDelete={(id) => drop("notes", setNotes, findNote(id), actionFailed)}

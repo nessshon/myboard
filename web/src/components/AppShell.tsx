@@ -10,7 +10,7 @@ import {
 } from "../api";
 import { setLang, useLang, useT } from "../i18n";
 import { navigate, useRoute } from "../router";
-import { load, save } from "../browser";
+import { load, save, usePhone } from "../browser";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
@@ -85,6 +85,7 @@ export function AppShell(p: Props) {
   }
 
   const [drawer, setDrawer] = useState(false);
+  const isPhone = usePhone();
   const [leaving, setLeaving] = useState(false);
   const drawerRef = useRef<HTMLDialogElement>(null);
 
@@ -102,11 +103,11 @@ export function AppShell(p: Props) {
     // line; the drawer itself takes focus instead, Tab still reaches every link.
     d.focus();
     d.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
-    const wideScreen = matchMedia("(min-width: 641px)");
-    const close = () => setDrawer(false);
-    wideScreen.addEventListener("change", close);
-    return () => wideScreen.removeEventListener("change", close);
   }, [drawer]);
+
+  useEffect(() => {
+    if (!isPhone) setDrawer(false);
+  }, [isPhone]);
 
   const swipe = useRef<{ x: number; y: number; t: number; dx: number; axis?: "x" | "y" }>(null);
   const pressedOutside = useRef(false);

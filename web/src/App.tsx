@@ -22,7 +22,7 @@ import { MyTasksPage } from "./pages/MyTasksPage";
 import { ProjectPage } from "./pages/ProjectPage";
 import { IntegrationsPage } from "./pages/IntegrationsPage";
 import { UsersPage } from "./pages/UsersPage";
-import { navigate, useRoute } from "./router";
+import { findProject, navigate, projectPath, useRoute } from "./router";
 import s from "./App.module.css";
 
 export function App() {
@@ -95,7 +95,7 @@ function Workspace({ me }: { me: User }) {
   }, [route.name, me.role]);
 
   const key = "key" in route ? route.key : undefined;
-  const project = projects?.find((p) => p.key.toLowerCase() === key);
+  const project = findProject(projects, key);
 
   const pageNames: Partial<Record<typeof route.name, string>> = {
     my: t("nav.myTasks"),
@@ -188,7 +188,7 @@ function Workspace({ me }: { me: User }) {
         onClose={() => setCreating(false)}
         onCreated={(p) => {
           setCreating(false);
-          navigate(`/p/${p.key.toLowerCase()}`);
+          navigate(projectPath(p.key));
         }}
       />
     </AppShell>

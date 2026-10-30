@@ -37,6 +37,7 @@ import {
 } from "../api";
 import { formatDate, formatDue, isOverdue } from "../format";
 import { useLang, useT } from "../i18n";
+import { projectPath } from "../router";
 import { Avatar } from "./Avatar";
 import { Icon } from "./Icon";
 import s from "./Board.module.css";
@@ -84,7 +85,7 @@ function CardBody({
   const lang = useLang();
   const who = task.assignees.flatMap((id) => people.filter((p) => p.id === id));
   const tags = labels.filter((l) => task.labels.includes(l.id));
-  const href = `/p/${projectKey.toLowerCase()}/${task.number}`;
+  const href = `${projectPath(projectKey)}/${task.number}`;
   // On a closed card the closing date replaces the due date, which no longer matters there.
   const closed = isClosed(task.status) && task.closed;
   return (
