@@ -51,7 +51,7 @@ export function UsersPage({ me }: { me: User }) {
     } catch (err) {
       const status = err instanceof ClientResponseError ? err.status : 0;
       setError(
-        status === 409 ? "users.exists" : status === 400 ? "users.badId" : "common.saveFailed",
+        status === 409 ? "users.exists" : status === 400 ? "users.badId" : "common.actionFailed",
       );
     }
   }
@@ -76,7 +76,7 @@ export function UsersPage({ me }: { me: User }) {
       await removeUser(u.id);
       setList((xs) => xs && xs.filter((x) => x.id !== u.id));
     } catch {
-      toast(t("common.saveFailed"));
+      toast(t("common.actionFailed"));
     }
   }
 

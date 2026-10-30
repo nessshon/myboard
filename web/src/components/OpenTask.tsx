@@ -35,9 +35,10 @@ export function OpenTask({
   }, [tasks, open]);
 
   const failed = () => toast(t("common.saveFailed"));
+  const actionFailed = () => toast(t("common.actionFailed"));
 
   const createLabel = (name: string, color: string) =>
-    add("labels", setLabels, { project: project.id, name, color }, failed);
+    add("labels", setLabels, { project: project.id, name, color }, actionFailed);
 
   return (
     <TaskDialog
@@ -51,7 +52,7 @@ export function OpenTask({
       onPatch={(data) => patch("tasks", setTasks, open, data, failed)}
       onDelete={() => {
         navigate(back);
-        drop("tasks", setTasks, open, failed);
+        drop("tasks", setTasks, open, actionFailed);
       }}
       onCreateLabel={createLabel}
       comments={comments}

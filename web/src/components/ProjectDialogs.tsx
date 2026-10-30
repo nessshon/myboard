@@ -372,7 +372,7 @@ function DeleteProject({ project, onClose }: { project: Project; onClose: () => 
       onClose();
       navigate("/", true);
     } catch {
-      toast(t("common.saveFailed"));
+      toast(t("common.actionFailed"));
       setBusy(false);
     }
   }

@@ -70,6 +70,7 @@ export function HomePage({
   }, [me.id]);
 
   const failed = () => toast(t("common.saveFailed"));
+  const actionFailed = () => toast(t("common.actionFailed"));
   const findNote = (id: string) => notes?.find((n) => n.id === id);
   const rows = tasks?.filter((x) => x.expand?.project) ?? null;
 
@@ -155,7 +156,7 @@ export function HomePage({
         isPhone={isPhone}
         projects={projects ?? []}
         onPatch={(id, data) => patch("notes", setNotes, findNote(id), data, failed)}
-        onDelete={(id) => drop("notes", setNotes, findNote(id), failed)}
+        onDelete={(id) => drop("notes", setNotes, findNote(id), actionFailed)}
       />
     </div>
   );
