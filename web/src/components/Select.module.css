@@ -28,8 +28,7 @@
   }
 }
 
-/* A field in a panel reads as a row: no frame, a background under a mouse. :where keeps the keyboard's
-   focus frame from theme.css the stronger rule. */
+/* :where keeps the keyboard focus frame from theme.css stronger than this. */
 :where(.plain) .select {
   border-color: transparent;
   background: transparent;

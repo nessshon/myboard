@@ -1,5 +1,4 @@
-/* Centred, a window that grows (editing opens a frame) would lift its title; held to the top, it grows down.
-   The engine's own cap for a modal dialog leaves 1em top and bottom, so the cap follows the new top. */
+/* Centred, a window growing into edit mode lifted its title; held to the top, it grows down. */
 dialog.window {
   margin-block: 8vh auto;
   max-height: calc(100% - 8vh - 24px);
@@ -153,7 +152,6 @@ dialog.window {
   background: var(--border);
 }
 
-/* Nothing to set apart while editing or creating: only the close button is left. */
 .sep:first-child {
   display: none;
 }

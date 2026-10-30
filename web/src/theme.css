@@ -400,7 +400,6 @@ textarea.input {
   }
 }
 
-/* Asked for less motion, nothing slides or fades; one rule instead of one per component. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

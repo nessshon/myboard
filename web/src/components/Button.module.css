@@ -86,7 +86,7 @@
   gap: 5px;
 }
 
-/* An icon in front looks wider than its box, so it sits a little closer to the edge. */
+/* An icon reads wider than its box, so less padding before it. */
 .btn.sm:has(> svg:first-child) {
   padding-left: 8px;
 }

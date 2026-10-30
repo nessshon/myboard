@@ -361,7 +361,6 @@ function NoteBody({
     onClose,
   );
 
-  // Into the title on the way in, back to the menu on the way out, as in a task.
   const wasEditing = useRef(editing);
   useEffect(() => {
     if (editing) titleField.current?.focus({ preventScroll: true });
