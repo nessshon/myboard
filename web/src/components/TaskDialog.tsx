@@ -244,7 +244,7 @@ function TaskBody({
 
   return (
     <>
-      <WindowTools isNew={!task} busy={busy} onSave={save} onClose={close}>
+      <WindowTools onClose={close}>
         {task && !editing && (
           <Menu
             label={t("task.actions")}
@@ -306,7 +306,7 @@ function TaskBody({
             }
             counter={<Counter value={description} max={LIMITS.taskDescription} />}
             actions={
-              task && (
+              task ? (
                 <>
                   <Button size="sm" variant="ghost" onClick={cancel}>
                     {t("common.cancel")}
@@ -315,6 +315,10 @@ function TaskBody({
                     {t("common.save")}
                   </Button>
                 </>
+              ) : (
+                <Button size="sm" variant="primary" disabled={busy} onClick={save}>
+                  {t("common.create")}
+                </Button>
               )
             }
             onSubmit={save}
@@ -615,29 +619,11 @@ export function useLeaving(
   return { close, ask, question };
 }
 
-export function WindowTools({
-  isNew,
-  busy,
-  onSave,
-  onClose,
-  children,
-}: {
-  isNew: boolean;
-  busy: boolean;
-  onSave: () => void;
-  onClose: () => void;
-  children?: ReactNode;
-}) {
+export function WindowTools({ onClose, children }: { onClose: () => void; children?: ReactNode }) {
   const t = useT();
   return (
     <div className={s.tools}>
-      {isNew ? (
-        <Button variant="primary" disabled={busy} onClick={onSave}>
-          {t("common.create")}
-        </Button>
-      ) : (
-        children
-      )}
+      {children}
       <span className={s.sep} aria-hidden="true" />
       <Button icon="x" aria-label={t("common.close")} onClick={onClose} />
     </div>

@@ -152,6 +152,11 @@
   background: var(--border);
 }
 
+/* Nothing to set apart while editing or creating: only the close button is left. */
+.sep:first-child {
+  display: none;
+}
+
 .props {
   --label-col: 92px;
   display: grid;

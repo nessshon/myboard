@@ -383,7 +383,17 @@ function NoteBody({
 
   return (
     <>
-      <WindowTools isNew={!note} busy={busy} onSave={save} onClose={close}>
+      <WindowTools onClose={close}>
+        {note && !editing && !note.shared && mine && (
+          <Button variant="ghost" icon="users" compact onClick={() => onShare(true)}>
+            {t("note.share")}
+          </Button>
+        )}
+        {note && !editing && note.shared && (mine || admin) && (
+          <Button variant="ghost" icon="lock" compact onClick={() => onShare(false)}>
+            {t("note.unshare")}
+          </Button>
+        )}
         {note && !editing && (
           <Menu
             label={t("note.actions")}
@@ -393,16 +403,6 @@ function NoteBody({
             <MenuItem icon="pencil" onClick={edit}>
               {t("common.edit")}
             </MenuItem>
-            {!note.shared && mine && (
-              <MenuItem icon="users" onClick={() => onShare(true)}>
-                {t("note.share")}
-              </MenuItem>
-            )}
-            {note.shared && (mine || admin) && (
-              <MenuItem icon="lock" onClick={() => onShare(false)}>
-                {t("note.unshare")}
-              </MenuItem>
-            )}
             {(mine || (admin && note.shared)) && (
               <MenuItem icon="trash" danger onClick={() => setAsking(true)}>
                 {t("common.delete")}
@@ -441,7 +441,7 @@ function NoteBody({
             }
             counter={<Counter value={body} max={LIMITS.noteBody} />}
             actions={
-              note && (
+              note ? (
                 <>
                   <Button size="sm" variant="ghost" onClick={cancel}>
                     {t("common.cancel")}
@@ -450,6 +450,10 @@ function NoteBody({
                     {t("common.save")}
                   </Button>
                 </>
+              ) : (
+                <Button size="sm" variant="primary" disabled={busy} onClick={save}>
+                  {t("common.create")}
+                </Button>
               )
             }
             onSubmit={save}
