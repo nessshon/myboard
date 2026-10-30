@@ -522,8 +522,20 @@ export async function patch<T extends Row | Label | Comment>(
   try {
     put(set, await update<T>(collection, old.id, data));
   } catch {
-    const back = Object.fromEntries(Object.keys(data).map((k) => [k, old[k as keyof T]]));
-    set((rows) => rows && rows.map((r) => (r.id === old.id ? { ...r, ...back } : r)));
+    // Only fields still holding what this call put there go back: a later change of the same field stands.
+    const keys = Object.keys(data) as (keyof T)[];
+    set(
+      (rows) =>
+        rows &&
+        rows.map((r) =>
+          r.id === old.id
+            ? {
+                ...r,
+                ...Object.fromEntries(keys.filter((k) => r[k] === data[k]).map((k) => [k, old[k]])),
+              }
+            : r,
+        ),
+    );
     fail();
   }
 }
