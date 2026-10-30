@@ -86,6 +86,7 @@ func Register(app core.App) {
 
 	app.OnRecordCreateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
 		e.Record.Set("started", "")
+		e.Record.Set("submitted", "")
 		e.Record.Set("closed", "")
 		return e.Next()
 	})
@@ -93,6 +94,7 @@ func Register(app core.App) {
 	app.OnRecordUpdateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
 		original := e.Record.Original()
 		e.Record.Set("started", original.Get("started"))
+		e.Record.Set("submitted", original.Get("submitted"))
 		e.Record.Set("closed", original.Get("closed"))
 		return e.Next()
 	})
@@ -131,11 +133,16 @@ func stampStatus(task *core.Record, was string) {
 	switch status {
 	case "in_progress":
 		task.Set("started", types.NowDateTime())
+		task.Set("submitted", "")
 		task.Set("closed", "")
-	case "done", "cancelled":
+	case "review":
+		task.Set("submitted", types.NowDateTime())
+		task.Set("closed", "")
+	case "done":
 		task.Set("closed", types.NowDateTime())
 	default:
 		task.Set("started", "")
+		task.Set("submitted", "")
 		task.Set("closed", "")
 	}
 }

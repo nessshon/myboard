@@ -150,11 +150,11 @@ func TestNotifications(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, created := testutil.Do(t, h, bobTok, http.MethodPost, "/api/myboard/tokens", `{"name":"agent"}`)
-	if status, body := testutil.Do(t, h, "Bearer "+created["token"].(string), http.MethodPatch, task, `{"status":"cancelled"}`); status != 200 {
+	if status, body := testutil.Do(t, h, "Bearer "+created["token"].(string), http.MethodPatch, task, `{"status":"review"}`); status != 200 {
 		t.Fatalf("status via token: %d %v", status, body)
 	}
 	got = fake.waitFor(t, "300000001", 2)
-	if !strings.Contains(got[1], "Task cancelled") || !strings.Contains(got[1], "Done → Cancelled") || !strings.Contains(got[1], "(API)") {
+	if !strings.Contains(got[1], "Task in review") || !strings.Contains(got[1], "Done → In review") || !strings.Contains(got[1], "(API)") {
 		t.Fatalf("agent's status message in English:\n%s", got[1])
 	}
 

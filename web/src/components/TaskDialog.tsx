@@ -532,11 +532,15 @@ function TaskBody({
                   <dd>{day(task.started)}</dd>
                 </>
               )}
+              {task.submitted && (
+                <>
+                  <dt>{t("task.submitted")}</dt>
+                  <dd>{day(task.submitted)}</dd>
+                </>
+              )}
               {task.closed && (
                 <>
-                  <dt>
-                    {t(task.status === "done" ? "task.closed.done" : "task.closed.cancelled")}
-                  </dt>
+                  <dt>{t("task.closed.done")}</dt>
                   <dd>{day(task.closed)}</dd>
                 </>
               )}

@@ -34,7 +34,7 @@
   --st-todo: #60646c;
   --st-progress: #3e63dd;
   --st-done: #2b9a66;
-  --st-cancelled: #b9bbc6;
+  --st-review: #6e56cf;
   --p-urgent: #e5484d;
   --p-high: #ffba18;
   --p-normal: #5eb1ef;
@@ -74,7 +74,7 @@
   --st-todo: #b0b4ba;
   --st-progress: #5472e4;
   --st-done: #30a46c;
-  --st-cancelled: #5a6169;
+  --st-review: #7d66d9;
   --p-urgent: #e5484d;
   --p-high: #ffc53d;
   --p-normal: #3b9eff;

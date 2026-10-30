@@ -11,11 +11,11 @@ import { forget, load, save } from "./browser";
 const pb = new PocketBase("/");
 pb.autoCancellation(false);
 
-export const STATUSES = ["backlog", "todo", "in_progress", "done", "cancelled"] as const;
+export const STATUSES = ["backlog", "todo", "in_progress", "review", "done"] as const;
 export const PRIORITIES = ["low", "normal", "high", "urgent"] as const;
 export type Status = (typeof STATUSES)[number];
-export const isClosed = (status: Status) => status === "done" || status === "cancelled";
-const OPEN = "status != 'done' && status != 'cancelled'";
+export const isClosed = (status: Status) => status === "done";
+const OPEN = "status != 'done'";
 type Priority = (typeof PRIORITIES)[number];
 
 export interface User extends RecordModel {
@@ -58,6 +58,7 @@ export interface Task extends RecordModel {
   author: string;
   edited: string;
   started: string;
+  submitted: string;
   closed: string;
 }
 export interface Note extends RecordModel {

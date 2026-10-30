@@ -73,9 +73,9 @@
   background: var(--st-done);
 }
 
-.cancelled {
-  border-color: var(--st-cancelled);
-  background: var(--st-cancelled);
+.review {
+  border-color: var(--st-review);
+  background: conic-gradient(var(--st-review) 0 75%, transparent 0);
 }
 
 .card {

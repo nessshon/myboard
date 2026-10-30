@@ -241,20 +241,21 @@ func TestDatesFollowStatus(t *testing.T) {
 	}
 
 	for _, step := range []struct {
-		patch           string
-		started, closed string // "kept", "set", or "" for cleared
+		patch                      string
+		started, submitted, closed string // "kept", "set", or "" for cleared
 	}{
-		{`{"status":"done"}`, "kept", "set"},
-		{`{"status":"cancelled"}`, "kept", "set"},
-		{`{"title":"renamed","started":"` + forged + `","closed":"` + forged + `"}`, "kept", "kept"},
-		{`{"status":"in_progress"}`, "set", ""},
-		{`{"status":"todo"}`, "", ""},
-		{`{"status":"done"}`, "", "set"},
-		{`{"status":"backlog"}`, "", ""},
+		{`{"status":"done"}`, "kept", "", "set"},
+		{`{"status":"review"}`, "kept", "set", ""},
+		{`{"title":"renamed","started":"` + forged + `","submitted":"` + forged + `","closed":"` + forged + `"}`, "kept", "kept", "kept"},
+		{`{"status":"done"}`, "kept", "kept", "set"},
+		{`{"status":"in_progress"}`, "set", "", ""},
+		{`{"status":"todo"}`, "", "", ""},
+		{`{"status":"done"}`, "", "", "set"},
+		{`{"status":"backlog"}`, "", "", ""},
 	} {
 		before := body
 		_, body = testutil.Do(t, h, tok, http.MethodPatch, url, step.patch)
-		for field, want := range map[string]string{"started": step.started, "closed": step.closed} {
+		for field, want := range map[string]string{"started": step.started, "submitted": step.submitted, "closed": step.closed} {
 			got, _ := body[field].(string)
 			ok := map[string]bool{
 				"kept": got == before[field],

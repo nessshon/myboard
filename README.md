@@ -13,7 +13,7 @@ Self-hosted: one Go binary on [PocketBase](https://pocketbase.io) with the web a
 
 **Features**
 
-- **Board** — backlog, to do, in progress, done, cancelled; drag and drop, several assignees, priorities, due dates, labels
+- **Board** — backlog, to do, in progress, in review, done; drag and drop, several assignees, priorities, due dates, labels
 - **Notes** — per project, personal or shared, in Markdown
 - **Discussion** — comments under each task, in Markdown
 - **Access** — people sign in with Telegram once an admin adds their Telegram ID

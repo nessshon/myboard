@@ -23,10 +23,10 @@ var words = map[string]texts{
 		assigned: "Вам назначена задача", added: "Вас добавили в проект", comment: "Новый комментарий", file: "📎 файл", due: "Срок:", status: "Статус:", who: "Кто:",
 		statusTitle: map[string]string{
 			"backlog": "Задача перенесена в «Бэклог»", "todo": "Задача перенесена в «К работе»", "in_progress": "Задача взята в работу",
-			"done": "Задача выполнена", "cancelled": "Задача отменена",
+			"review": "Задача на проверке", "done": "Задача выполнена",
 		},
 		statusName: map[string]string{
-			"backlog": "Бэклог", "todo": "К работе", "in_progress": "В работе", "done": "Готово", "cancelled": "Отменено",
+			"backlog": "Бэклог", "todo": "К работе", "in_progress": "В работе", "review": "На проверке", "done": "Готово",
 		},
 		months: [12]string{"января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"},
 	},
@@ -34,17 +34,17 @@ var words = map[string]texts{
 		assigned: "You've been assigned a task", added: "You've been added to a project", comment: "New comment", file: "📎 file", due: "Due:", status: "Status:", who: "By:",
 		statusTitle: map[string]string{
 			"backlog": `Task moved to "Backlog"`, "todo": `Task moved to "Todo"`, "in_progress": "Task started",
-			"done": "Task done", "cancelled": "Task cancelled",
+			"review": "Task in review", "done": "Task done",
 		},
 		statusName: map[string]string{
-			"backlog": "Backlog", "todo": "Todo", "in_progress": "In progress", "done": "Done", "cancelled": "Cancelled",
+			"backlog": "Backlog", "todo": "Todo", "in_progress": "In progress", "review": "In review", "done": "Done",
 		},
 		months: [12]string{"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"},
 	},
 }
 
 var statusMark = map[string]string{
-	"backlog": "⚪", "todo": "⚪", "in_progress": "🔵", "done": "🟢", "cancelled": "⚫",
+	"backlog": "⚪", "todo": "⚪", "in_progress": "🔵", "review": "🟣", "done": "🟢",
 }
 
 func assignedMessage(lang, publicURL string, task, project *core.Record, by string) string {
