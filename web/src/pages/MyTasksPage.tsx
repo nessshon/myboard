@@ -6,7 +6,6 @@ import { TaskList, TaskRow } from "../components/TaskRow";
 import { toast } from "../components/Toast";
 import { useT } from "../i18n";
 import { navigate } from "../router";
-import s from "./HomePage.module.css";
 
 export function MyTasksPage({
   me,
@@ -41,7 +40,7 @@ export function MyTasksPage({
   if (!tasks) return null;
   const rows = tasks.filter((x) => x.expand?.project);
   return (
-    <div className={s.page}>
+    <div className="page">
       {project && (
         <OpenTask
           key={project.id}

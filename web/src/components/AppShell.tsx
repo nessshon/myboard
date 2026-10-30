@@ -186,7 +186,7 @@ export function AppShell(p: Props) {
           <Avatar name={personName(p.me)} src={p.me.avatar_url} size={28} />
           <div className={s.who}>
             <span className={s.whoName}>{personName(p.me)}</span>
-            <span className={s.sub}>
+            <span className="hint">
               {p.me.username && `@${p.me.username}`}
               {isAdmin && `${p.me.username ? " · " : ""}${t("header.admin")}`}
             </span>

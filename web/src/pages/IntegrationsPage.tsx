@@ -107,7 +107,7 @@ export function IntegrationsPage() {
   const revoking = list?.find((x) => x.id === confirming);
 
   return (
-    <div className={s.page}>
+    <div className="page">
       <div className={own.pair}>
         <Section title={t("api.title")}>
           <div className={own.card}>

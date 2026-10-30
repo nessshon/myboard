@@ -75,7 +75,7 @@ export function HomePage({
 
   if (!rows || !active || !notes) return null;
   return (
-    <div className={s.page}>
+    <div className="page">
       {open && (
         <OpenTask key={open.id} project={open} number={task!.number} people={people} back="/" />
       )}

@@ -124,7 +124,7 @@ export function LoginPage() {
                     >
                       <Avatar name={u.name || u.tg_id} size={24} />
                       <span className={`ellipsis ${s.devName}`}>{u.name || u.tg_id}</span>
-                      <span className={s.devRole}>
+                      <span className="hint">
                         {t(u.role === "admin" ? "users.admin" : "users.member")}
                       </span>
                     </button>

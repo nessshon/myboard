@@ -75,7 +75,7 @@ export function UsersPage({ me }: { me: User }) {
   const roleName = (role: Role) => t(role === "admin" ? "users.admin" : "users.member");
 
   return (
-    <div className={s.page}>
+    <div className="page">
       <Section title={t("users.addTitle")}>
         <form className={`${s.box} ${s.form}`} onSubmit={add} noValidate>
           <label className={`${s.field} ${s.grow}`}>
@@ -140,11 +140,11 @@ export function UsersPage({ me }: { me: User }) {
                             </span>
                           )}
                           <span className={s.names}>
-                            <span className={`${s.name} ${name ? "" : s.minor}`} title={name}>
+                            <span className={`${s.name} ${name ? "" : "hint"}`} title={name}>
                               {name || t("users.unknown")}
                             </span>
                             {name && (
-                              <span className={s.minor}>
+                              <span className="hint">
                                 {u.username ? `@${u.username}` : t("users.noUsername")}
                               </span>
                             )}
@@ -186,7 +186,7 @@ export function UsersPage({ me }: { me: User }) {
                       </td>
                       <td className={s.right}>
                         {isMe ? (
-                          <span className={s.minor}>{t("users.itsYou")}</span>
+                          <span className="hint">{t("users.itsYou")}</span>
                         ) : isOwner ? null : (
                           <Button size="sm" onClick={() => setConfirming(u.id)}>
                             {t("common.delete")}

@@ -2,7 +2,7 @@
   position: relative;
   width: 52px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: var(--r-full);
   background: var(--hover);
   border: 1px solid var(--border);
   flex: none;

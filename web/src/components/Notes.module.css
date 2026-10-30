@@ -92,13 +92,8 @@
 
 @media (hover: hover) {
   .note:hover {
+    --surface: var(--surface-raised);
     box-shadow: var(--shadow-md);
-  }
-}
-
-@media (hover: hover) {
-  :root[data-theme="dark"] .note:hover {
-    --surface: var(--hover);
   }
 }
 

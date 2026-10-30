@@ -263,7 +263,7 @@ export function ProjectPage({
   };
 
   return (
-    <div className={s.page}>
+    <div className={`page ${s.page}`}>
       {project.archived && (
         <div className={s.banner}>
           <Icon name="archive" />
