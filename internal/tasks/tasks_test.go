@@ -233,31 +233,32 @@ func TestDatesFollowStatus(t *testing.T) {
 	url := "/api/collections/tasks/records"
 	_, body := testutil.Do(t, h, tok, http.MethodPost, url,
 		`{"project":"`+p.Id+`","title":"t","status":"done","started":"`+forged+`","planned":"`+forged+`"}`)
-	if body["started"] != "" || body["planned"] != "" || body["closed"] == "" || body["closed"] == forged {
-		t.Fatalf("created closed: planned %q, started %q, closed %q", body["planned"], body["started"], body["closed"])
+	if body["closed"] == "" || body["closed"] == forged || body["planned"] != body["closed"] || body["started"] != body["closed"] || body["submitted"] != body["closed"] {
+		t.Fatalf("created closed, every column dated at once: %q %q %q %q", body["planned"], body["started"], body["submitted"], body["closed"])
 	}
 
 	_, body = testutil.Do(t, h, tok, http.MethodPost, url,
 		`{"project":"`+p.Id+`","title":"t","status":"in_progress","closed":"`+forged+`"}`)
 	url += "/" + body["id"].(string)
 	started, _ := body["started"].(string)
-	if started == "" || started == forged || body["closed"] != "" {
-		t.Fatalf("created in progress: started %q, closed %q", started, body["closed"])
+	if started == "" || started == forged || body["planned"] != started || body["submitted"] != "" || body["closed"] != "" {
+		t.Fatalf("created in progress: planned %q, started %q, closed %q", body["planned"], started, body["closed"])
 	}
 
 	for _, step := range []struct {
 		patch                               string
 		planned, started, submitted, closed string // "kept", "set", or "" for cleared
 	}{
-		{`{"status":"done"}`, "", "kept", "", "set"},
-		{`{"status":"review"}`, "", "kept", "set", ""},
+		{`{"status":"done"}`, "kept", "kept", "set", "set"},
+		{`{"status":"review"}`, "kept", "kept", "kept", ""},
 		{`{"title":"renamed","planned":"` + forged + `","started":"` + forged + `","submitted":"` + forged + `","closed":"` + forged + `"}`, "kept", "kept", "kept", "kept"},
-		{`{"status":"done"}`, "", "kept", "kept", "set"},
-		{`{"status":"in_progress"}`, "", "set", "", ""},
-		{`{"status":"todo"}`, "set", "", "", ""},
-		{`{"status":"in_progress"}`, "kept", "set", "", ""},
-		{`{"status":"done"}`, "kept", "kept", "", "set"},
+		{`{"status":"done"}`, "kept", "kept", "kept", "set"},
+		{`{"status":"in_progress"}`, "kept", "kept", "", ""},
+		{`{"status":"review"}`, "kept", "kept", "set", ""},
+		{`{"status":"in_progress"}`, "kept", "kept", "", ""},
+		{`{"status":"todo"}`, "kept", "", "", ""},
 		{`{"status":"backlog"}`, "", "", "", ""},
+		{`{"status":"review"}`, "set", "set", "set", ""},
 	} {
 		before := body
 		_, body = testutil.Do(t, h, tok, http.MethodPatch, url, step.patch)

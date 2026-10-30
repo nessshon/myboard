@@ -85,19 +85,17 @@ func Register(app core.App) {
 	})
 
 	app.OnRecordCreateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
-		e.Record.Set("planned", "")
-		e.Record.Set("started", "")
-		e.Record.Set("submitted", "")
-		e.Record.Set("closed", "")
+		for _, d := range statusDates {
+			e.Record.Set(d.field, "")
+		}
 		return e.Next()
 	})
 
 	app.OnRecordUpdateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
 		original := e.Record.Original()
-		e.Record.Set("planned", original.Get("planned"))
-		e.Record.Set("started", original.Get("started"))
-		e.Record.Set("submitted", original.Get("submitted"))
-		e.Record.Set("closed", original.Get("closed"))
+		for _, d := range statusDates {
+			e.Record.Set(d.field, original.Get(d.field))
+		}
 		return e.Next()
 	})
 
@@ -126,32 +124,31 @@ func Register(app core.App) {
 	registerAttachments(app)
 }
 
-// Each date is when the task last entered that state; moving back clears it (docs/plan-task-dates.md).
+// The columns after the backlog, in board order, with the date each one keeps; the backlog has the creation date.
+var statusDates = []struct{ status, field string }{
+	{"todo", "planned"},
+	{"in_progress", "started"},
+	{"review", "submitted"},
+	{"done", "closed"},
+}
+
+// A column is dated when the task first gets there, and a skipped one with the same move; moving left clears the
+// dates of the columns left behind.
 func stampStatus(task *core.Record, was string) {
 	status := task.GetString("status")
 	if status == was {
 		return
 	}
-	switch status {
-	case "todo":
-		task.Set("planned", types.NowDateTime())
-		task.Set("started", "")
-		task.Set("submitted", "")
-		task.Set("closed", "")
-	case "in_progress":
-		task.Set("started", types.NowDateTime())
-		task.Set("submitted", "")
-		task.Set("closed", "")
-	case "review":
-		task.Set("submitted", types.NowDateTime())
-		task.Set("closed", "")
-	case "done":
-		task.Set("closed", types.NowDateTime())
-	default:
-		task.Set("planned", "")
-		task.Set("started", "")
-		task.Set("submitted", "")
-		task.Set("closed", "")
+	now := types.NowDateTime()
+	past := status == "backlog"
+	for _, d := range statusDates {
+		switch {
+		case past:
+			task.Set(d.field, "")
+		case task.GetString(d.field) == "":
+			task.Set(d.field, now)
+		}
+		past = past || d.status == status
 	}
 }
 
