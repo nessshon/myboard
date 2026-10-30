@@ -104,3 +104,54 @@
     padding: 0 10px 0 9px;
   }
 }
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: var(--shift, 0);
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  width: max-content;
+  max-width: min(240px, 100vw - 16px);
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .wrap:hover .tip {
+    display: flex;
+  }
+}
+
+.wrap:has(:focus-visible) .tip,
+.wrap[data-held] .tip {
+  display: flex;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
