@@ -79,8 +79,6 @@
   "note.deleteTitle": "Delete note “{name}”?",
   "note.noBody": "Add text",
   "note.actions": "Note actions",
-  "note.created": "created",
-  "note.edited": "edited",
   "note.empty": "No notes yet",
   "note.scrollLeft": "Scroll left",
   "note.scrollRight": "Scroll right",

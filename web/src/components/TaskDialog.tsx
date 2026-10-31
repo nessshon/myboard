@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type RefObject, type ReactNode } from "react";
 import {
   PRIORITIES,
   STATUSES,
@@ -268,7 +268,6 @@ function TaskBody({
       />
     </div>
   );
-  const moment = (timestamp: string) => formatMoment(timestamp, lang);
   const chosen = labels.filter((l) => v.labels.includes(l.id));
   const toggle = (id: string) =>
     set({ labels: v.labels.includes(id) ? v.labels.filter((x) => x !== id) : [...v.labels, id] });
@@ -509,49 +508,17 @@ function TaskBody({
           />
         </div>
         {task && (
-          <div className={s.made}>
-            {author && (
-              <span className={s.by}>
-                {t("task.author")}
-                <Avatar name={personName(author)} src={author.avatar_url} size={16} />
-                <span className={s.who}>{personName(author, t("users.gone"))}</span>
-              </span>
-            )}
-            <dl className={s.dates}>
-              <dt>{t("task.created")}</dt>
-              <dd>{moment(task.created)}</dd>
-              {task.planned && (
-                <>
-                  <dt>{t("status.todo")}</dt>
-                  <dd>{moment(task.planned)}</dd>
-                </>
-              )}
-              {task.started && (
-                <>
-                  <dt>{t("status.in_progress")}</dt>
-                  <dd>{moment(task.started)}</dd>
-                </>
-              )}
-              {task.submitted && (
-                <>
-                  <dt>{t("status.review")}</dt>
-                  <dd>{moment(task.submitted)}</dd>
-                </>
-              )}
-              {task.closed && (
-                <>
-                  <dt>{t("status.done")}</dt>
-                  <dd>{moment(task.closed)}</dd>
-                </>
-              )}
-              {task.edited && (
-                <>
-                  <dt>{t("task.edited")}</dt>
-                  <dd>{moment(task.edited)}</dd>
-                </>
-              )}
-            </dl>
-          </div>
+          <Made
+            author={author}
+            dates={[
+              [t("task.created"), task.created],
+              [t("status.todo"), task.planned],
+              [t("status.in_progress"), task.started],
+              [t("status.review"), task.submitted],
+              [t("status.done"), task.closed],
+              [t("task.edited"), task.edited],
+            ]}
+          />
         )}
       </aside>
       {task && comments && (
@@ -655,6 +622,32 @@ export function WindowTools({ onClose, children }: { onClose: () => void; childr
       {children}
       <span className={s.sep} aria-hidden="true" />
       <Button icon="x" aria-label={t("common.close")} onClick={onClose} />
+    </div>
+  );
+}
+
+export function Made({ author, dates }: { author?: User; dates: [string, string][] }) {
+  const t = useT();
+  const lang = useLang();
+  return (
+    <div className={s.made}>
+      {author && (
+        <span className={s.by}>
+          {t("task.author")}
+          <Avatar name={personName(author)} src={author.avatar_url} size={16} />
+          <span className={s.who}>{personName(author, t("users.gone"))}</span>
+        </span>
+      )}
+      <dl className={s.dates}>
+        {dates
+          .filter(([, at]) => at)
+          .map(([label, at]) => (
+            <Fragment key={label}>
+              <dt>{label}</dt>
+              <dd>{formatMoment(at, lang)}</dd>
+            </Fragment>
+          ))}
+      </dl>
     </div>
   );
 }

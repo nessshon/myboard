@@ -81,8 +81,6 @@
   "note.deleteTitle": "Удалить заметку «{name}»?",
   "note.noBody": "Добавить текст",
   "note.actions": "Действия с заметкой",
-  "note.created": "создано",
-  "note.edited": "изменено",
   "note.empty": "Заметок пока нет",
   "note.scrollLeft": "Прокрутить влево",
   "note.scrollRight": "Прокрутить вправо",

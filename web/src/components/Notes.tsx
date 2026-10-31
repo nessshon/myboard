@@ -4,7 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { iconURL, indexAmong, personName, type Note, type Project, type User } from "../api";
 import { usePhone } from "../browser";
-import { formatDate, formatMoment } from "../format";
+import { formatDate } from "../format";
 import { useLang, useT } from "../i18n";
 import { LIMITS } from "../limits";
 import { Avatar } from "./Avatar";
@@ -19,7 +19,7 @@ import { Markdown } from "./Markdown";
 import { Menu, MenuItem } from "./Menu";
 import { ProjectBadge } from "./ProjectBadge";
 import { ConfirmDialog } from "./ProjectDialogs";
-import { useLeaving, WindowTools } from "./TaskDialog";
+import { Made, useLeaving, WindowTools } from "./TaskDialog";
 import b from "./Button.module.css";
 import w from "./TaskDialog.module.css";
 import s from "./Notes.module.css";
@@ -310,7 +310,6 @@ function NoteBody({
   onDelete: () => void;
 }) {
   const t = useT();
-  const lang = useLang();
   const [editing, setEditing] = useState(!note);
   const [title, setTitle] = useState(note?.title ?? "");
   const [body, setBody] = useState(note?.body ?? "");
@@ -368,9 +367,6 @@ function NoteBody({
   const mine = note?.author === me.id;
   const admin = me.role === "admin";
   const author = note?.shared ? people.find((p) => p.id === note.author) : undefined;
-  const dated =
-    note &&
-    `${t(note.edited ? "note.edited" : "note.created")} ${formatMoment(note.edited || note.created, lang)}`;
 
   return (
     <>
@@ -463,10 +459,6 @@ function NoteBody({
           note && (
             <>
               <h3 className={w.title}>{note.title}</h3>
-              <span className="hint">
-                {dated}
-                {author && ` · ${personName(author, t("users.gone"))}`}
-              </span>
               {note.body ? (
                 <div className={w.desc}>
                   <Markdown text={note.body} />
@@ -478,6 +470,16 @@ function NoteBody({
               )}
             </>
           )
+        )}
+        {/* At the window's foot, as a task's: editing replaces what is above it, so it does not move. */}
+        {note && (
+          <Made
+            author={author}
+            dates={[
+              [t("task.created"), note.created],
+              [t("task.edited"), note.edited],
+            ]}
+          />
         )}
       </div>
       {question}
