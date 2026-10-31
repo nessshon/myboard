@@ -87,8 +87,6 @@ const paths = {
       <path d="M16 17H8" />
     </>
   ),
-  // GitHub's own mark from @primer/octicons 19.9.0 (MIT, build/svg/mark-github-16.svg), scaled from its
-  // 16px box; Lucide's outlined cat read poorly at this size.
   film: (
     <>
       <rect width="18" height="18" x="3" y="3" rx="2" />
@@ -101,6 +99,8 @@ const paths = {
       <path d="M17 16.5h4" />
     </>
   ),
+  // GitHub's own mark from @primer/octicons 19.9.0 (MIT, build/svg/mark-github-16.svg), scaled from its
+  // 16px box; Lucide's outlined cat read poorly at this size.
   github: (
     <path
       fill="currentColor"
