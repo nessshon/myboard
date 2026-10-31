@@ -258,6 +258,7 @@ function TaskBody({
         {editing ? (
           <Editor
             className={s.editor}
+            text={description}
             head={
               <>
                 <textarea

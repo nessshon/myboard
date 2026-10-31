@@ -35,11 +35,20 @@
   overflow-wrap: anywhere;
 }
 
-.text textarea {
+.text textarea,
+.preview {
   min-height: calc(2 * 14px * 1.7 + 20px);
   max-height: 60vh;
+}
+
+.text textarea {
   font-size: 14px;
   line-height: 1.7;
+}
+
+.preview {
+  padding: 10px var(--ex);
+  overflow-y: auto;
 }
 
 /* Firefox has no field-sizing yet; a fixed height there beats a two-line box. */

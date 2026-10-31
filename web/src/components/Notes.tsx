@@ -405,6 +405,7 @@ function NoteBody({
         {editing ? (
           <Editor
             className={w.editor}
+            text={body}
             head={
               <>
                 <textarea

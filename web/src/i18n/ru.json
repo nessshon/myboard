@@ -18,6 +18,7 @@
   "common.copy": "Копировать",
   "common.copied": "Скопировано",
   "common.copyFailed": "Не удалось скопировать: браузер не дал доступ к буферу обмена.",
+  "common.preview": "Просмотр",
   "common.notFound": "Такой страницы нет.",
   "header.switchLang": "Switch to English",
   "header.toggleTheme": "Сменить тему",

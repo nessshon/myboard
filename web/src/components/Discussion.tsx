@@ -425,6 +425,8 @@ export function Discussion({
             {editing?.id === c.id ? (
               <Editor
                 className={s.body}
+                text={toStored(draft, editPicks.current)}
+                people={people}
                 attach={editAttach}
                 files={
                   <Files
@@ -499,6 +501,8 @@ export function Discussion({
         );
       })}
       <Editor
+        text={toStored(text, sendPicks.current)}
+        people={people}
         attach={attach}
         files={
           <Files

@@ -304,7 +304,7 @@ export function Files({
           // The button goes with the file; the keyboard stays in the editor it was in.
           e.currentTarget
             .closest("[data-editor]")
-            ?.querySelector<HTMLElement>("[data-text] textarea")
+            ?.querySelector<HTMLElement>("[data-text]:not([hidden]) textarea, [data-preview]")
             ?.focus();
           onRemove?.(a);
         }}

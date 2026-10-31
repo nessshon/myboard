@@ -18,6 +18,7 @@
   "common.copy": "Copy",
   "common.copied": "Copied",
   "common.copyFailed": "Could not copy: the browser denied access to the clipboard.",
+  "common.preview": "Preview",
   "common.notFound": "This page does not exist.",
   "header.switchLang": "Переключить на русский",
   "header.toggleTheme": "Toggle theme",
