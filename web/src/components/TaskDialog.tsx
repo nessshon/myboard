@@ -14,7 +14,7 @@ import {
   personName,
   uploadFile,
 } from "../api";
-import { formatDate, formatDue, isOverdue } from "../format";
+import { formatDue, formatMoment, isOverdue } from "../format";
 import { useLang, useT } from "../i18n";
 import { LIMITS } from "../limits";
 import { Avatar } from "./Avatar";
@@ -231,7 +231,7 @@ function TaskBody({
       onDismiss={uploads.dismiss}
     />
   );
-  const day = (timestamp: string) => formatDate(timestamp, lang);
+  const moment = (timestamp: string) => formatMoment(timestamp, lang);
   const chosen = labels.filter((l) => v.labels.includes(l.id));
   const toggle = (id: string) =>
     set({ labels: v.labels.includes(id) ? v.labels.filter((x) => x !== id) : [...v.labels, id] });
@@ -479,35 +479,35 @@ function TaskBody({
             )}
             <dl className={s.dates}>
               <dt>{t("task.created")}</dt>
-              <dd>{day(task.created)}</dd>
+              <dd>{moment(task.created)}</dd>
               {task.planned && (
                 <>
                   <dt>{t("status.todo")}</dt>
-                  <dd>{day(task.planned)}</dd>
+                  <dd>{moment(task.planned)}</dd>
                 </>
               )}
               {task.started && (
                 <>
                   <dt>{t("status.in_progress")}</dt>
-                  <dd>{day(task.started)}</dd>
+                  <dd>{moment(task.started)}</dd>
                 </>
               )}
               {task.submitted && (
                 <>
                   <dt>{t("status.review")}</dt>
-                  <dd>{day(task.submitted)}</dd>
+                  <dd>{moment(task.submitted)}</dd>
                 </>
               )}
               {task.closed && (
                 <>
                   <dt>{t("status.done")}</dt>
-                  <dd>{day(task.closed)}</dd>
+                  <dd>{moment(task.closed)}</dd>
                 </>
               )}
               {task.edited && (
                 <>
                   <dt>{t("task.edited")}</dt>
-                  <dd>{day(task.edited)}</dd>
+                  <dd>{moment(task.edited)}</dd>
                 </>
               )}
             </dl>

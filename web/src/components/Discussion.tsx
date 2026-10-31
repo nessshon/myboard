@@ -43,6 +43,7 @@ import { Menu, MenuItem } from "./Menu";
 import menu from "./Menu.module.css";
 import { ConfirmDialog } from "./ProjectDialogs";
 import { Reactions } from "./Reactions";
+import { Tip } from "./Tip";
 import { toast } from "./Toast";
 import s from "./Discussion.module.css";
 
@@ -390,7 +391,18 @@ export function Discussion({
               <span className={`ellipsis ${s.name}`}>{name}</span>
               <span className={s.time}>
                 {formatMoment(c.created, lang)}
-                {c.updated !== c.created && ` · ${t("comment.edited")}`}
+                {c.updated !== c.created && (
+                  <>
+                    {" · "}
+                    <Tip tip={formatMoment(c.updated, lang)}>
+                      {(describedBy) => (
+                        <button type="button" className={s.edited} aria-describedby={describedBy}>
+                          {t("comment.edited")}
+                        </button>
+                      )}
+                    </Tip>
+                  </>
+                )}
               </span>
             </div>
             {(mine || me?.role === "admin") && editing?.id !== c.id && (

@@ -33,6 +33,10 @@
   color: var(--muted);
 }
 
+.edited {
+  cursor: default;
+}
+
 .more {
   width: 28px;
   height: 28px;

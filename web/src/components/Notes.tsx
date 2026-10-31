@@ -4,7 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { indexAmong, personName, type Note, type Project, type User } from "../api";
 import { usePhone } from "../browser";
-import { formatDate } from "../format";
+import { formatDate, formatMoment } from "../format";
 import { useLang, useT } from "../i18n";
 import { LIMITS } from "../limits";
 import { Avatar } from "./Avatar";
@@ -369,7 +369,7 @@ function NoteBody({
   const author = note?.shared ? people.find((p) => p.id === note.author) : undefined;
   const dated =
     note &&
-    `${t(note.edited ? "note.edited" : "note.created")} ${formatDate(note.edited || note.created, lang, "long")}`;
+    `${t(note.edited ? "note.edited" : "note.created")} ${formatMoment(note.edited || note.created, lang)}`;
 
   return (
     <>

@@ -16,8 +16,10 @@ export function isOverdue(due: string) {
 // engine's Date parser.
 const parseDate = (timestamp: string) => new Date(timestamp.replace(" ", "T"));
 
-export function formatDate(timestamp: string, lang: string, month: "short" | "long" = "short") {
-  return new Intl.DateTimeFormat(lang, { day: "numeric", month }).format(parseDate(timestamp));
+export function formatDate(timestamp: string, lang: string) {
+  return new Intl.DateTimeFormat(lang, { day: "numeric", month: "short" }).format(
+    parseDate(timestamp),
+  );
 }
 
 export function formatDay(timestamp: string, lang: string) {
@@ -34,6 +36,7 @@ export function formatMoment(timestamp: string, lang: string) {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   }).format(parseDate(timestamp));
 }
 
