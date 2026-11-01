@@ -52,7 +52,7 @@
 }
 
 .moon {
-  color: #8ea4ff;
+  color: var(--accent);
 }
 
 @media (max-width: 640px) {
