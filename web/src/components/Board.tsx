@@ -305,13 +305,17 @@ export function Board({ tasks, onMove, ...data }: BoardProps) {
             count={cols[status].length}
             over={!!active && active.status !== status && cols[status].includes(active.id)}
           >
-            <SortableContext items={cols[status]} strategy={verticalListSortingStrategy}>
-              {cols[status].map((id) => {
-                const x = byId.get(id);
-                return x && <SortableCard key={id} task={x} {...data} />;
-              })}
-            </SortableContext>
-            {cols[status].length === 0 && <span className={s.empty}>{t("task.columnEmpty")}</span>}
+            <div className={s.cards}>
+              <SortableContext items={cols[status]} strategy={verticalListSortingStrategy}>
+                {cols[status].map((id) => {
+                  const x = byId.get(id);
+                  return x && <SortableCard key={id} task={x} {...data} />;
+                })}
+              </SortableContext>
+              {cols[status].length === 0 && (
+                <span className={s.empty}>{t("task.columnEmpty")}</span>
+              )}
+            </div>
           </Column>
         ))}
       </div>

@@ -11,6 +11,9 @@
   flex: 1 1 0;
   min-width: 180px;
   min-height: 480px;
+  /* The shell's 56px header with 23px under it, and the page's 41px foot: scrolled to the page's end, a column
+     fits the window whole. */
+  max-height: calc(100dvh - 120px);
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -37,6 +40,19 @@
   margin: 0;
   font-size: 13px;
   font-weight: 600;
+}
+
+/* Out to the column's edges, so the cards' shadows are not cut at the sides. */
+.cards {
+  flex: 1;
+  min-height: 0;
+  margin: 0 -8px -8px;
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 
 .empty {
@@ -79,6 +95,7 @@
 }
 
 .card {
+  flex: none;
   position: relative;
   overflow: hidden;
   padding: 10px 12px 12px;
@@ -230,6 +247,8 @@
 
 .mcol {
   flex: 0 0 var(--col-w);
+  /* The header's 60px and the lane's 28px of padding. */
+  max-height: calc(100dvh - 88px);
   scroll-snap-align: center;
   scroll-snap-stop: always;
   display: flex;
@@ -276,6 +295,9 @@
 
 .list {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
   padding: 0 8px 12px;
   display: flex;
   flex-direction: column;
