@@ -13,9 +13,9 @@ import {
   patch,
   personName,
   useMe,
-  useReactions,
   type Attachment,
   type Comment,
+  type Reaction,
   type ReactionKey,
   type Setter,
   type User,
@@ -57,6 +57,8 @@ type Props = {
   setAttachments: Setter<Attachment>;
   uploads: ReturnType<typeof useUploads>;
   token: string;
+  reactions: Reaction[] | null;
+  onReact: (comment: string, emoji: ReactionKey) => void;
   // What is typed here and not sent or saved, for the window to ask about before it closes.
   pending: RefObject<{ unsaved: boolean; discard: () => void }>;
   ask: (then: () => void) => void;
@@ -224,6 +226,8 @@ export function Discussion({
   setAttachments,
   uploads,
   token,
+  reactions,
+  onReact,
   pending,
   ask,
 }: Props) {
@@ -251,9 +255,6 @@ export function Discussion({
   const actionFailed = () => toast(t("common.actionFailed"));
   const fileEdit = useFileEdit(setAttachments, actionFailed);
   const editAttach = useAttach(addToEdited);
-  const [reactions, setReactions] = useReactions(taskId, () => toast(t("common.loadFailed")));
-  // A second tap before the server answers would add the same reaction twice and be refused.
-  const reacting = useRef(new Set<string>());
   const thread = comments
     .filter((c) => c.task === taskId)
     .sort((a, b) => a.created.localeCompare(b.created));
@@ -304,19 +305,6 @@ export function Discussion({
       ]);
       toast(t("file.commentFailed"));
     }
-  }
-
-  async function react(comment: string, emoji: ReactionKey) {
-    const key = `${comment} ${emoji}`;
-    if (!me || reacting.current.has(key)) return;
-    reacting.current.add(key);
-    const mine = reactions?.find(
-      (r) => r.comment === comment && r.emoji === emoji && r.author === me.id,
-    );
-    await (mine
-      ? drop("reactions", setReactions, mine, actionFailed)
-      : add("reactions", setReactions, { comment, emoji }, actionFailed));
-    reacting.current.delete(key);
   }
 
   function startEdit(c: Comment) {
@@ -494,7 +482,7 @@ export function Discussion({
                 reactions={reactions.filter((r) => r.comment === c.id)}
                 people={people}
                 me={me.id}
-                onToggle={(emoji) => react(c.id, emoji)}
+                onToggle={(emoji) => onReact(c.id, emoji)}
               />
             )}
           </article>

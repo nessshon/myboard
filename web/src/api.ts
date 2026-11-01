@@ -97,6 +97,7 @@ export const REACTIONS = {
 export type ReactionKey = keyof typeof REACTIONS;
 export interface Reaction extends RecordModel {
   comment: string;
+  task: string;
   author: string;
   emoji: ReactionKey;
 }
@@ -315,13 +316,14 @@ function live<T extends RecordModel>(
   };
 }
 
-// Only the open task's discussion needs them; the board does not.
-export function useReactions(taskId: string, failed: () => void) {
+// Only the open task needs them; the board does not.
+export function useReactions(taskId: string | undefined, failed: () => void) {
   const [reactions, setReactions] = useState<Reaction[] | null>(null);
   useEffect(() => {
+    if (!taskId) return;
     const stop = live(
       "reactions",
-      pb.filter("comment.task = {:id}", { id: taskId }),
+      pb.filter("comment.task = {:id} || task = {:id}", { id: taskId }),
       "created",
       setReactions,
       failed,

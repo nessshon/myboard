@@ -2,12 +2,16 @@ import { useEffect, useRef, useState, type RefObject, type ReactNode } from "rea
 import {
   PRIORITIES,
   STATUSES,
+  add,
+  drop,
   isClosed,
   useAttachments,
   useFileToken,
   useMe,
+  useReactions,
   type Comment,
   type Label,
+  type ReactionKey,
   type Setter,
   type Task,
   type User,
@@ -39,6 +43,7 @@ import { Markdown } from "./Markdown";
 import { Menu, MenuCheck, MenuItem } from "./Menu";
 import { PROJECT_COLORS } from "./ProjectBadge";
 import { ConfirmDialog } from "./ProjectDialogs";
+import { Reactions } from "./Reactions";
 import { Select } from "./Select";
 import { toast } from "./Toast";
 import b from "./Button.module.css";
@@ -128,13 +133,16 @@ function TaskBody({
   const me = useMe();
   const main = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLTextAreaElement>(null);
-  const [attachments, setAttachments] = useAttachments(task?.id, () =>
-    toast(t("common.loadFailed")),
-  );
+  const loadFailed = () => toast(t("common.loadFailed"));
+  const actionFailed = () => toast(t("common.actionFailed"));
+  const [attachments, setAttachments] = useAttachments(task?.id, loadFailed);
   const token = useFileToken(!!task);
   const uploads = useUploads(setAttachments);
   const attach = useAttach(attachFiles);
-  const fileEdit = useFileEdit(setAttachments, () => toast(t("common.actionFailed")));
+  const fileEdit = useFileEdit(setAttachments, actionFailed);
+  const [reactions, setReactions] = useReactions(task?.id, loadFailed);
+  // A second tap before the server answers would add the same reaction twice and be refused.
+  const reacting = useRef(new Set<string>());
   const descFiles = (attachments ?? []).filter((a) => !a.comment);
   const descUploads = uploads.uploads.filter((u) => !u.comment);
   const sending = descUploads.some((u) => u.state === "sending");
@@ -222,6 +230,25 @@ function TaskBody({
     else setPicked((p) => [...p, ...fit]);
   }
 
+  // An empty comment is the task itself.
+  async function react(comment: string, emoji: ReactionKey) {
+    const key = `${comment} ${emoji}`;
+    if (!task || !me || reacting.current.has(key)) return;
+    reacting.current.add(key);
+    const mine = reactions?.find(
+      (r) => r.comment === comment && r.emoji === emoji && r.author === me.id,
+    );
+    await (mine
+      ? drop("reactions", setReactions, mine, actionFailed)
+      : add(
+          "reactions",
+          setReactions,
+          comment ? { comment, emoji } : { task: task.id, emoji },
+          actionFailed,
+        ));
+    reacting.current.delete(key);
+  }
+
   const files = task && (
     <Files
       items={descFiles}
@@ -230,6 +257,16 @@ function TaskBody({
       onRetry={uploads.retry}
       onDismiss={uploads.dismiss}
     />
+  );
+  const ownReactions = task && reactions && me && (
+    <div className={s.foot}>
+      <Reactions
+        reactions={reactions.filter((r) => !r.comment)}
+        people={people}
+        me={me.id}
+        onToggle={(emoji) => react("", emoji)}
+      />
+    </div>
   );
   const moment = (timestamp: string) => formatMoment(timestamp, lang);
   const chosen = labels.filter((l) => v.labels.includes(l.id));
@@ -339,14 +376,16 @@ function TaskBody({
               <div className={s.desc}>
                 <Markdown text={v.description} />
                 {files}
+                {ownReactions}
               </div>
             ) : (
-              <>
+              <div className={`${s.desc} ${s.empty}`}>
                 <button type="button" className={s.addDesc} onClick={edit}>
                   {t("task.noDescription")}
                 </button>
                 {files}
-              </>
+                {ownReactions}
+              </div>
             )}
           </>
         )}
@@ -527,6 +566,8 @@ function TaskBody({
             setAttachments={setAttachments}
             uploads={uploads}
             token={token}
+            reactions={reactions}
+            onReact={react}
             pending={thread}
             ask={ask}
           />

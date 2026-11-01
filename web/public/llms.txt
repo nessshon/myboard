@@ -32,9 +32,9 @@ Each collection is at `$MB/api/collections/<name>/records`.
 - Only the author edits a comment; the author or an admin deletes it. Deleting a task deletes its comments.
 - To mention someone who sees the task (a project member or an admin), write `[@Name](user:USER_ID)`: they get notified, and the site shows their current name.
 
-**reactions** — emoji under a comment; read and add for members of the comment's task's project and admins.
-- `id`, `comment` (comment id), `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥, `clap` 👏, `hundred` 💯, `thinking` 🤔), `created`, `updated`.
-- One of each kind per person and comment: the same again answers 400. A reaction cannot be changed; only its author removes it. Nobody is notified.
+**reactions** — emoji under a task or a comment; read and add for members of the task's project and admins.
+- `id`, `comment` (comment id) or `task` (task id, for the task itself): one of the two, the other empty; `author` (set by the server), `emoji` (one of `+1` 👍, `-1` 👎, `laugh` 😄, `hooray` 🎉, `confused` 😕, `heart` ❤️, `rocket` 🚀, `eyes` 👀, `done` ✅, `thanks` 🙏, `fire` 🔥, `clap` 👏, `hundred` 💯, `thinking` 🤔), `created`, `updated`.
+- One of each kind per person on a task or a comment: the same again answers 400. A reaction cannot be changed; only its author removes it. Nobody is notified.
 
 **attachments** — files under a task's description or in a comment; read and add for members of the task's project and admins.
 - `id`, `task` (task id), `comment` (comment id; empty for the description), `file` (the stored name), `name` (the name it came with), `size` (bytes), `author` (the last three set by the server), `created`, `updated`.
@@ -135,7 +135,7 @@ curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collec
   -d '{"task":"TASK_ID","body":"Done, needs a review."}'
 ```
 
-React to a comment, and take the reaction back:
+React to a comment (`"task":"TASK_ID"` in place of `comment` for the task itself), and take the reaction back:
 
 ```sh
 curl -s "${auth[@]}" -H 'Content-Type: application/json' -X POST "$MB/api/collections/reactions/records" \

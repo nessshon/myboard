@@ -271,8 +271,20 @@ dialog.window {
   }
 }
 
+/* The reactions keep to the block's foot, so with a short description or none they stand at one height. */
 .desc {
+  display: flex;
+  flex-direction: column;
   min-height: 140px;
+}
+
+/* Without a description its button and files keep the spacing they had as the column's own items. */
+.desc.empty {
+  gap: inherit;
+}
+
+.foot {
+  margin-top: auto;
 }
 
 /* The frame stands out by its border and padding, so the title text inside stays where it was. */
