@@ -16,18 +16,23 @@ import (
 
 func upload(t *testing.T, h http.Handler, token string, fields map[string]string, filename string, content []byte) (int, map[string]any) {
 	t.Helper()
+	return form(t, h, http.MethodPost, "/api/collections/attachments/records", token, fields, "file", filename, content)
+}
+
+func form(t *testing.T, h http.Handler, method, url, token string, fields map[string]string, field, filename string, content []byte) (int, map[string]any) {
+	t.Helper()
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 	for k, v := range fields {
 		_ = w.WriteField(k, v)
 	}
-	part, err := w.CreateFormFile("file", filename)
+	part, err := w.CreateFormFile(field, filename)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, _ = part.Write(content)
 	_ = w.Close()
-	req := httptest.NewRequest(http.MethodPost, "/api/collections/attachments/records", &body)
+	req := httptest.NewRequest(method, url, &body)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Authorization", token)
 	rec := httptest.NewRecorder()

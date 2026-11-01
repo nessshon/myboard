@@ -2,7 +2,7 @@ import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
-import { indexAmong, personName, type Note, type Project, type User } from "../api";
+import { iconURL, indexAmong, personName, type Note, type Project, type User } from "../api";
 import { usePhone } from "../browser";
 import { formatDate, formatMoment } from "../format";
 import { useLang, useT } from "../i18n";
@@ -245,6 +245,7 @@ function NoteCard({
             name={project.name}
             projectKey={project.key}
             color={project.color}
+            src={iconURL(project)}
             size={18}
           />
         )}

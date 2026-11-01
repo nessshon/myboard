@@ -58,6 +58,8 @@
   "project.nameRequired": "A name is required",
   "project.key": "ID",
   "project.color": "Colour",
+  "project.icon": "Icon",
+  "project.picture": "Upload image",
   "project.description": "Description",
   "project.keyChange": "Tasks become {key}-1, {key}-2…; old links to them will stop working.",
   "project.keyLatin": "Latin letters and digits only",

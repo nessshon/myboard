@@ -18,7 +18,7 @@ export type Upload = {
   preview?: string;
 };
 
-const extension = (name: string) => name.slice(name.lastIndexOf(".") + 1).toLowerCase();
+export const extension = (name: string) => name.slice(name.lastIndexOf(".") + 1).toLowerCase();
 // PocketBase makes thumbs of these only and serves the original for anything else (apis/file.go).
 const isImage = (name: string) => ["png", "jpg", "jpeg", "gif", "webp"].includes(extension(name));
 const isVideo = (name: string) => ["mp4", "mov", "webm"].includes(extension(name));

@@ -38,6 +38,7 @@ export interface Project extends RecordModel {
   members: string[];
   archived: boolean;
   color: string;
+  icon: string;
 }
 export interface Label extends RecordModel {
   project: string;
@@ -380,6 +381,10 @@ export function useFileToken(on: boolean) {
 // By the collection's name: the server lets only these file paths through (internal/guard).
 export const fileURL = (a: Attachment, token: string, query = "") =>
   `/api/files/attachments/${a.id}/${encodeURIComponent(a.file)}?token=${token}${query}`;
+
+// Open, so without a token (internal/migrations/1793750400_project_icon.go).
+export const iconURL = (p: Project) =>
+  p.icon ? `/api/files/projects/${p.id}/${encodeURIComponent(p.icon)}?thumb=96x96` : undefined;
 
 // The SDK sends with fetch, which cannot report upload progress; XMLHttpRequest can.
 export function uploadFile(

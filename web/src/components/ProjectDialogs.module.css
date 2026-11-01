@@ -11,15 +11,23 @@
   gap: 6px;
 }
 
+.icon {
+  --most: 28px;
+  --gap: 8px;
+  /* Eight to a row: on a narrow phone the swatches shrink to fit rather than run into each other. */
+  --size: min(var(--most), (100cqi - 7 * var(--gap)) / 8);
+  container-type: inline-size;
+}
+
 .swatches {
   display: grid;
-  grid-template-columns: repeat(8, 28px);
-  gap: 8px;
+  grid-template-columns: repeat(8, var(--size));
+  gap: var(--gap);
 }
 
 .swatch {
-  width: 28px;
-  height: 28px;
+  width: var(--size);
+  height: var(--size);
   border-radius: var(--r-sm);
   display: inline-grid;
   place-items: center;
@@ -28,10 +36,45 @@
   -webkit-text-fill-color: var(--on-solid);
 }
 
-.swatch[aria-pressed="true"] {
+.swatch[aria-pressed="true"],
+.picture[aria-pressed="true"] .swatch {
   box-shadow:
     0 0 0 2px var(--surface),
     0 0 0 4px currentColor;
+}
+
+.picture {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.picture .swatch {
+  overflow: hidden;
+  color: var(--accent);
+  border: 1px dashed var(--border-strong);
+}
+
+.picture .swatch:has(img) {
+  border: 0;
+}
+
+.picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (hover: hover) {
+  .picture:hover {
+    color: var(--text);
+  }
 }
 
 .bad {
@@ -108,8 +151,8 @@ textarea.desc {
 }
 
 @media (max-width: 640px) {
-  .swatch {
-    width: 36px;
-    height: 36px;
+  .icon {
+    --most: 36px;
+    --gap: 6px;
   }
 }

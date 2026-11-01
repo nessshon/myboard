@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { isClosed, type Project, type Task } from "../api";
+import { iconURL, isClosed, type Project, type Task } from "../api";
 import { formatDue, isOverdue } from "../format";
 import { useLang, useT } from "../i18n";
 import { StatusDot } from "./Board";
@@ -14,7 +14,13 @@ export function TaskRow({ task, project, href }: { task: Task; project: Project;
   return (
     <a className={[s.row, s[task.priority]].filter(Boolean).join(" ")} href={href} title={priority}>
       <StatusDot status={task.status} />
-      <ProjectBadge name={project.name} projectKey={project.key} color={project.color} size={18} />
+      <ProjectBadge
+        name={project.name}
+        projectKey={project.key}
+        color={project.color}
+        src={iconURL(project)}
+        size={18}
+      />
       <span className={s.title}>
         {task.title}
         {priority && <span className="sr">, {priority}</span>}

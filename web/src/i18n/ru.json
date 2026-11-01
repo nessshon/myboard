@@ -60,6 +60,8 @@
   "project.nameRequired": "Нужно название",
   "project.key": "ID",
   "project.color": "Цвет",
+  "project.icon": "Значок",
+  "project.picture": "Загрузить изображение",
   "project.description": "Описание",
   "project.keyChange": "Задачи станут {key}-1, {key}-2…, старые ссылки на них перестанут работать.",
   "project.keyLatin": "Только латинские буквы и цифры",

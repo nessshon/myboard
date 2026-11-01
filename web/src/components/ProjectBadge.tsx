@@ -1,3 +1,4 @@
+import { useState } from "react";
 import s from "./ProjectBadge.module.css";
 
 // White initials stay ≥ 4.5:1 on every colour below (the lowest, slate, is 4.76); admins pick from all
@@ -44,21 +45,36 @@ export function ProjectBadge({
   name,
   projectKey,
   color,
+  src,
   size = 20,
 }: {
   name: string;
   projectKey: string;
   color?: string;
+  src?: string;
   size?: number;
 }) {
+  // The picture that failed, so a new one gets its own try.
+  const [broken, setBroken] = useState<string>();
+  const shape = { width: size, height: size, borderRadius: Math.round(size * 0.3) };
+  if (src && src !== broken) {
+    return (
+      <img
+        className={s.badge}
+        style={shape}
+        src={src}
+        alt=""
+        draggable={false}
+        onError={() => setBroken(src)}
+      />
+    );
+  }
   return (
     <span
       className={s.badge}
       aria-hidden="true"
       style={{
-        width: size,
-        height: size,
-        borderRadius: Math.round(size * 0.3),
+        ...shape,
         fontSize: Math.round(size * 0.5),
         background: projectColor(projectKey, color),
       }}

@@ -1,12 +1,23 @@
 import { ClientResponseError } from "pocketbase";
-import { useState, type FormEvent } from "react";
-import { create, membersOf, remove, update, type Project, type User, personName } from "../api";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  create,
+  iconURL,
+  membersOf,
+  remove,
+  update,
+  type Project,
+  type User,
+  personName,
+} from "../api";
 import { useT, type Key } from "../i18n";
-import { LIMITS } from "../limits";
+import { LIMITS, PROJECT_ICON_EXTENSIONS } from "../limits";
 import { navigate, projectPath } from "../router";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { Counter } from "./Counter";
+import { extension } from "./Files";
+import { Icon } from "./Icon";
 import { initial, PROJECT_COLORS, projectColor } from "./ProjectBadge";
 import { Dialog } from "./Dialog";
 import { Select } from "./Select";
@@ -108,6 +119,16 @@ function ProjectForm({
   const [typedKey, setTypedKey] = useState(project?.key);
   const [description, setDescription] = useState(project?.description ?? "");
   const [color, setColor] = useState(project?.color ?? "");
+  const [icon, setIcon] = useState<File | string>(project?.icon ?? "");
+  // Another admin may change the picture meanwhile, and PocketBase refuses a name the record no longer has.
+  const [opened] = useState(icon);
+  // A colour chosen over the picture keeps it at hand until saved, so a slip of the finger costs no upload.
+  const [pictured, setPictured] = useState(!!icon);
+  const [preview, setPreview] = useState("");
+  const [iconError, setIconError] = useState("");
+  const picker = useRef<HTMLInputElement>(null);
+  useEffect(() => () => URL.revokeObjectURL(preview), [preview]);
+  const picture = icon instanceof File ? preview : project && icon ? iconURL(project) : undefined;
   const [taken, setTaken] = useState(false);
   const [busy, setBusy] = useState(false);
   const [tried, setTried] = useState(false);
@@ -127,12 +148,30 @@ function ProjectForm({
           : null;
   const keyChanged = !!project && keyOk && key !== project.key;
 
+  function choose(file: File) {
+    if (!PROJECT_ICON_EXTENSIONS.includes(extension(file.name)))
+      return setIconError(t("file.badType"));
+    if (file.size > LIMITS.projectIconSize)
+      return setIconError(t("file.tooBig", { size: LIMITS.projectIconSize / 1024 / 1024 }));
+    setIconError("");
+    setIcon(file);
+    setPictured(true);
+    setPreview(URL.createObjectURL(file));
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setTried(true);
     if (!ok || busy) return;
     setBusy(true);
-    const data = { name: name.trim(), key, description: description.trim(), color };
+    const sent = pictured ? icon : "";
+    const data = {
+      name: name.trim(),
+      key,
+      description: description.trim(),
+      color,
+      ...(sent !== opened && { icon: sent }),
+    };
     try {
       onSaved(
         project
@@ -181,23 +220,52 @@ function ProjectForm({
         {keyError && <span className={`hint ${s.bad}`}>{t(keyError)}</span>}
         {!keyError && keyChanged && <span className="hint">{t("project.keyChange", { key })}</span>}
       </label>
-      <div className={s.field} role="group" aria-label={t("project.color")}>
-        <span className="caption">{t("project.color")}</span>
+      <div className={`${s.field} ${s.icon}`} role="group" aria-label={t("project.icon")}>
+        <span className="caption">{t("project.icon")}</span>
         <div className={s.swatches}>
           {PROJECT_COLORS.map((c, i) => (
             <button
               key={c}
               type="button"
-              aria-pressed={projectColor(key, color) === c}
+              aria-pressed={!pictured && projectColor(key, color) === c}
               aria-label={`${t("project.color")} ${i + 1}`}
               className={s.swatch}
               style={{ background: c, color: c }}
-              onClick={() => setColor(c)}
+              onClick={() => {
+                setColor(c);
+                setPictured(false);
+              }}
             >
               {initial(name)}
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          aria-pressed={!!picture && pictured}
+          className={s.picture}
+          onClick={() => {
+            if (picture && !pictured) setPictured(true);
+            else picker.current?.click();
+          }}
+        >
+          <span className={s.swatch}>
+            {picture ? <img src={picture} alt="" /> : <Icon name="plus" size={16} />}
+          </span>
+          {t("project.picture")}
+        </button>
+        <input
+          ref={picker}
+          type="file"
+          hidden
+          accept={PROJECT_ICON_EXTENSIONS.map((x) => `.${x}`).join(",")}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) choose(file);
+            e.target.value = "";
+          }}
+        />
+        {iconError && <span className={`hint ${s.bad}`}>{iconError}</span>}
       </div>
       <label className={s.field}>
         <span className="caption">

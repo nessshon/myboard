@@ -13,7 +13,12 @@ export const LIMITS = {
   reviewers: 10,
   attachmentSize: 50 * 1024 * 1024,
   attachmentsPerComment: 10,
+  projectIconSize: 5 * 1024 * 1024,
 } as const;
+
+// By the name, as a picker may give no type for webp; the server checks the content against the icon
+// field's types in internal/migrations.
+export const PROJECT_ICON_EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
 
 // What a file picker offers; the server checks the content against attachmentTypes in internal/migrations.
 export const ATTACHMENT_EXTENSIONS = (

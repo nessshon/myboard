@@ -25,7 +25,7 @@ var allowedAPI = regexp.MustCompile(`^/api/(` +
 	`health|realtime|batch|myboard/.+|` +
 	`collections/(users|projects|labels|tasks|notes|comments|reactions|attachments|api_tokens)/records(/[^/]+)?|` +
 	`collections/users/(auth-methods|auth-refresh|auth-with-oauth2)|` +
-	`files/token|files/attachments/[^/]+/[^/]+` +
+	`files/token|files/(attachments|projects)/[^/]+/[^/]+` +
 	`)$`)
 
 // A batch may only reorder: the site sends nothing else in one (web/src/api.ts, renumber). Hooks inside a
@@ -33,6 +33,15 @@ var allowedAPI = regexp.MustCompile(`^/api/(` +
 var reorder = regexp.MustCompile(`^/api/collections/(tasks|notes)/records/[^/?]+$`)
 
 func Register(app core.App) {
+	// A project's picture goes out only as its thumb: the original may be a phone's photo whose EXIF tells where it
+	// was taken, and the thumb is encoded anew without it.
+	app.OnFileDownloadRequest("projects").BindFunc(func(e *core.FileDownloadRequestEvent) error {
+		if e.Request.URL.Query().Get("thumb") == "" || e.ThumbError != nil {
+			return e.NotFoundError("", nil)
+		}
+		return e.Next()
+	})
+
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
 			path := e.Request.URL.Path

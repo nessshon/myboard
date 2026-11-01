@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  iconURL,
   membersOf,
   drop,
   myNotes,
@@ -121,7 +122,13 @@ export function HomePage({
             {active.map((p) => (
               <a key={p.id} className={s.card} href={projectPath(p.key)}>
                 <span className={s.top}>
-                  <ProjectBadge name={p.name} projectKey={p.key} color={p.color} size={32} />
+                  <ProjectBadge
+                    name={p.name}
+                    projectKey={p.key}
+                    color={p.color}
+                    src={iconURL(p)}
+                    size={32}
+                  />
                   <span className={s.name}>{p.name}</span>
                 </span>
                 <span className="clamp">{p.description}</span>

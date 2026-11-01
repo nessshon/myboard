@@ -2,7 +2,7 @@ import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRef } from "react";
-import type { Project } from "../api";
+import { iconURL, type Project } from "../api";
 import { useT } from "../i18n";
 import { projectPath } from "../router";
 import { useDragSensors } from "./Board";
@@ -118,6 +118,7 @@ function Row({
           name={project.name}
           projectKey={project.key}
           color={project.color}
+          src={iconURL(project)}
           size={22}
         />
         <span className={`ellipsis ${s.text}`}>{project.name}</span>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { membersOf, update, useMe, type Project, type User, personName } from "../api";
+import { iconURL, membersOf, update, useMe, type Project, type User, personName } from "../api";
 import { useT } from "../i18n";
 import { Avatar } from "./Avatar";
 import { Icon } from "./Icon";
@@ -29,7 +29,13 @@ export function ProjectMenu({
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
   const badge = (
-    <ProjectBadge name={project.name} projectKey={project.key} color={project.color} size={22} />
+    <ProjectBadge
+      name={project.name}
+      projectKey={project.key}
+      color={project.color}
+      src={iconURL(project)}
+      size={22}
+    />
   );
 
   if (me.role !== "admin")

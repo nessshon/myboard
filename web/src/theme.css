@@ -369,6 +369,7 @@ textarea.input {
   color: var(--text);
 }
 
+/* Centred by its capital, not the line box; text-box trims a block, not a flex container. */
 .letter {
   display: block;
   line-height: 1;
