@@ -111,6 +111,17 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Inside the page no bar shows; the ones that scroll sideways ask for a thin one back, a mouse has no
+   other way there. :where weighs nothing, so their own rule wins. */
+:where(body *) {
+  scrollbar-width: none;
+}
+
+/* Safari before 18.2 knows only this one. */
+:where(body *)::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;

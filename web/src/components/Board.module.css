@@ -52,7 +52,6 @@
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
-  scrollbar-width: none;
 }
 
 .empty {
@@ -240,7 +239,6 @@
   padding: 12px calc((100% - var(--col-w)) / 2) 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scrollbar-width: none;
   overscroll-behavior-x: contain;
   --col-w: calc(100vw - 76px);
 }
@@ -297,7 +295,6 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  scrollbar-width: none;
   padding: 0 8px 12px;
   display: flex;
   flex-direction: column;

@@ -382,7 +382,6 @@ input.search {
 .options {
   max-height: min(320px, 50vh);
   overflow-y: auto;
-  scrollbar-width: none;
   margin: -6px -8px 0;
   padding: 2px;
   display: flex;

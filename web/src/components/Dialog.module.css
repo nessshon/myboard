@@ -8,11 +8,6 @@
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-lg);
-  scrollbar-width: none;
-}
-
-.dialog::-webkit-scrollbar {
-  display: none;
 }
 
 /* Older engines do not inherit custom properties into ::backdrop, hence the fallback. */

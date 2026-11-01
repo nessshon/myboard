@@ -94,6 +94,7 @@
   border-collapse: collapse;
   display: block;
   overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .md th,

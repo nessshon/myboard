@@ -33,12 +33,7 @@
   margin: -10px -16px -18px;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: none;
   scroll-behavior: smooth;
-}
-
-.track::-webkit-scrollbar {
-  display: none;
 }
 
 .arrow {
