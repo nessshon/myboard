@@ -18,7 +18,7 @@ import { Notes } from "../components/Notes";
 import { OpenTask } from "../components/OpenTask";
 import { ProjectBadge } from "../components/ProjectBadge";
 import { Section } from "../components/Section";
-import { TaskList, TaskRow } from "../components/TaskRow";
+import { TaskGroups, TaskRow } from "../components/TaskRow";
 import { toast } from "../components/Toast";
 import { useT } from "../i18n";
 import { findProject, navigate, projectPath } from "../router";
@@ -87,8 +87,9 @@ export function HomePage({
       >
         {rows.length === 0 && <div className="empty">{t("my.empty")}</div>}
         {rows.length > 0 && (
-          <TaskList>
-            {rows.slice(0, SHOWN).map((x) => {
+          <TaskGroups
+            tasks={rows.slice(0, SHOWN)}
+            row={(x) => {
               const pr = x.expand!.project!;
               return (
                 <TaskRow
@@ -98,8 +99,8 @@ export function HomePage({
                   href={`/${pr.key.toLowerCase()}-${x.number}`}
                 />
               );
-            })}
-          </TaskList>
+            }}
+          />
         )}
       </Section>
 

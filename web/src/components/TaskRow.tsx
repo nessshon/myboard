@@ -13,7 +13,6 @@ export function TaskRow({ task, project, href }: { task: Task; project: Project;
   const done = isClosed(task.status);
   return (
     <a className={[s.row, s[task.priority]].filter(Boolean).join(" ")} href={href} title={priority}>
-      <StatusDot status={task.status} />
       <ProjectBadge
         name={project.name}
         projectKey={project.key}
@@ -35,6 +34,30 @@ export function TaskRow({ task, project, href }: { task: Task; project: Project;
   );
 }
 
-export function TaskList({ children }: { children: ReactNode }) {
-  return <div className={s.list}>{children}</div>;
+export function TaskGroups<T extends Task>({
+  tasks,
+  row,
+}: {
+  tasks: T[];
+  row: (task: T) => ReactNode;
+}) {
+  const t = useT();
+  const statuses = [...new Set(tasks.map((x) => x.status))];
+  return (
+    <div className={s.groups}>
+      {statuses.map((status) => {
+        const group = tasks.filter((x) => x.status === status);
+        return (
+          <div key={status} className={s.group}>
+            <h3 className={s.head}>
+              <StatusDot status={status} />
+              {t(`status.${status}`)}
+              <span className="count">{group.length}</span>
+            </h3>
+            <div className={s.list}>{group.map(row)}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useMyOpenTasks, type Project, type User } from "../api";
 import { OpenTask } from "../components/OpenTask";
 import { Section } from "../components/Section";
-import { TaskList, TaskRow } from "../components/TaskRow";
+import { TaskGroups, TaskRow } from "../components/TaskRow";
 import { toast } from "../components/Toast";
 import { useT } from "../i18n";
 import { findProject, navigate } from "../router";
@@ -44,8 +44,9 @@ export function MyTasksPage({
         {rows.length === 0 ? (
           <div className="empty">{t("my.empty")}</div>
         ) : (
-          <TaskList>
-            {rows.map((x) => {
+          <TaskGroups
+            tasks={rows}
+            row={(x) => {
               const pr = x.expand!.project!;
               return (
                 <TaskRow
@@ -55,8 +56,8 @@ export function MyTasksPage({
                   href={`/tasks/${pr.key.toLowerCase()}-${x.number}`}
                 />
               );
-            })}
-          </TaskList>
+            }}
+          />
         )}
       </Section>
     </div>
