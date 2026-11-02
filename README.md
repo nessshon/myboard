@@ -13,9 +13,10 @@ Self-hosted: one Go binary on [PocketBase](https://pocketbase.io) with the web a
 
 **Features**
 
-- **Board** — backlog, to do, in progress, in review, done; drag and drop, several assignees and reviewers, priorities, due dates, labels
+- **Board** — backlog, to do, in progress, in review, done; drag and drop, several assignees and reviewers, priorities, due dates, labels; a colour or a picture for each project
+- **My tasks** — what you are assigned to or reviewing across all projects, grouped by stage
 - **Notes** — per project, personal or shared, in Markdown
-- **Discussion** — comments under each task in Markdown, with files and emoji reactions
+- **Discussion** — comments under each task in Markdown, with a preview, files and emoji reactions; reactions on the task itself too
 - **Access** — people sign in with Telegram once an admin adds their Telegram ID
 - **Notifications** — from the login bot: added to a project, assigned to you, status of your tasks, comments and mentions
 - **API** — personal tokens and an [`llms.txt`](web/public/llms.txt) guide for AI agents
