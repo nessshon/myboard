@@ -102,13 +102,10 @@
   flex-direction: column;
   gap: 10px;
   --edge: var(--border);
-  /* Bright on a dark ground, a 1px edge looks thinner where it bends, its pixels there only partly lit;
-     the dark theme thickens it inside by --edge-inner. */
-  --inside: inset 0 0 0 var(--edge-inner) var(--edge);
   background: var(--surface);
   border: 1px solid var(--edge);
   border-radius: var(--r-md);
-  box-shadow: var(--inside), var(--shadow-sm);
+  box-shadow: var(--shadow-sm);
   cursor: grab;
   transition:
     border-color 0.12s,
@@ -118,7 +115,7 @@
 @media (hover: hover) {
   .card:hover {
     --surface: var(--surface-raised);
-    box-shadow: var(--inside), var(--shadow-md);
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -128,19 +125,21 @@
 
 .lift {
   cursor: grabbing;
-  box-shadow: var(--inside), var(--shadow-md);
+  box-shadow: var(--shadow-md);
 }
 
+/* The priority's colour mixed into the grey edge: pure, it outshone the card. The dark theme takes more of
+   it, the same share looking fainter on a dark ground. */
 .card.normal {
-  --edge: var(--p-normal);
+  --edge: color-mix(in srgb, var(--p-normal) var(--edge-mix), var(--border));
 }
 
 .card.high {
-  --edge: var(--p-high);
+  --edge: color-mix(in srgb, var(--p-high) var(--edge-mix), var(--border));
 }
 
 .card.urgent {
-  --edge: var(--p-urgent);
+  --edge: color-mix(in srgb, var(--p-urgent) var(--edge-mix), var(--border));
 }
 
 .top {

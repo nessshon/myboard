@@ -32,7 +32,6 @@
   --shadow-sm: 0 1px 2px rgba(28, 32, 36, 0.06);
   --shadow-md: 0 4px 14px rgba(28, 32, 36, 0.08), 0 1px 3px rgba(28, 32, 36, 0.06);
   --shadow-lg: 0 24px 64px rgba(28, 32, 36, 0.18);
-  --edge-inner: 0px;
   --st-backlog: #80838d;
   --st-todo: #60646c;
   --st-progress: #3e63dd;
@@ -41,6 +40,7 @@
   --p-urgent: #e5484d;
   --p-high: #ffba18;
   --p-normal: #5eb1ef;
+  --edge-mix: 55%;
   --ok: #2b9a66;
   --warn: #ab6400;
   --tg: #1a75b8;
@@ -71,11 +71,9 @@
   --overlay: rgba(0, 0, 0, 0.6);
   --danger: #ff9592;
   --danger-solid: #ce2c31;
-  /* No shadow, yet not none: a card lists it after its edge, and none cannot stand in a list. */
-  --shadow-sm: 0 0 #0000;
+  --shadow-sm: none;
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
-  --edge-inner: 0.5px;
   --st-backlog: #696e77;
   --st-todo: #b0b4ba;
   --st-progress: #5472e4;
@@ -84,6 +82,7 @@
   --p-urgent: #e5484d;
   --p-high: #ffc53d;
   --p-normal: #3b9eff;
+  --edge-mix: 66%;
   --ok: #30a46c;
   --warn: #ffca16;
   --tg: #1a75b8;
