@@ -1,9 +1,10 @@
+import { ClientResponseError } from "pocketbase";
 import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { flushSync } from "react-dom";
 import { drop, fileURL, put, uploadFile, type Attachment, type Setter } from "../api";
 import { formatSize } from "../format";
 import { useLang, useT } from "../i18n";
-import { ATTACHMENT_EXTENSIONS, LIMITS } from "../limits";
+import { LIMITS } from "../limits";
 import { Icon } from "./Icon";
 import s from "./Files.module.css";
 
@@ -25,10 +26,14 @@ const isVideo = (name: string) => ["mp4", "mov", "webm"].includes(extension(name
 
 let lastKey = 0;
 
+// The type is the server's to tell, by the content (internal/tasks/attachments.go). A file it refused stays
+// refused when picked again, as when a comment of files alone is taken back: sending it again changes nothing.
+const badType = new WeakSet<File>();
+
 function refusal(file: File, t: ReturnType<typeof useT>) {
   if (file.size > LIMITS.attachmentSize)
     return t("file.tooBig", { size: LIMITS.attachmentSize / 1024 / 1024 });
-  if (!ATTACHMENT_EXTENSIONS.includes(extension(file.name))) return t("file.badType");
+  if (badType.has(file)) return t("file.badType");
   return "";
 }
 
@@ -59,6 +64,7 @@ export function unpick(uploads: Upload[], key: string) {
 const PARALLEL = 1;
 
 export function useUploads(setAttachments: Setter<Attachment>) {
+  const t = useT();
   const [uploads, setUploads] = useState<Upload[]>([]);
   const running = useRef(0);
   const waiting = useRef<{ upload: Upload; done: (row?: Attachment) => void }[]>([]);
@@ -76,8 +82,18 @@ export function useUploads(setAttachments: Setter<Attachment>) {
           forget(u);
           done(row);
         })
-        .catch(() => {
-          change(u.key, { state: "failed", share: 0 });
+        .catch((err) => {
+          const file = err instanceof ClientResponseError ? err.response?.data?.file : undefined;
+          if (file?.code === "validation_invalid_mime_type") {
+            badType.add(u.file);
+            forget(u);
+            change(u.key, {
+              state: "refused",
+              reason: t("file.badType"),
+              share: 0,
+              preview: undefined,
+            });
+          } else change(u.key, { state: "failed", share: 0 });
           done();
         })
         .finally(() => {
@@ -236,7 +252,6 @@ export function useAttach(onFiles: (files: File[]) => void) {
           type="file"
           multiple
           hidden
-          accept={ATTACHMENT_EXTENSIONS.map((x) => `.${x}`).join(",")}
           onChange={(e) => {
             onFiles([...(e.target.files ?? [])]);
             e.target.value = "";

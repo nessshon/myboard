@@ -38,7 +38,7 @@ Each collection is at `$MB/api/collections/<name>/records`.
 
 **attachments** — files under a task's description or in a comment; read and add for members of the task's project and admins.
 - `id`, `task` (task id), `comment` (comment id; empty for the description), `file` (the stored name), `name` (the name it came with), `size` (bytes), `author` (the last three set by the server), `created`, `updated`.
-- Up to 50 MB each: pictures, PDF, text and logs, CSV, JSON, office documents, archives, video and audio. The server tells the type by the content; HTML, SVG and programs answer 400.
+- Up to 50 MB each: any text file (code, configs, patches, logs, Markdown, CSV, JSON), pictures, PDF, office documents, archives, video and audio. The server tells the type by the content; HTML and SVG files (by their name), programs and other binary files answer 400 with `validation_invalid_mime_type`.
 - Only a comment's author adds files to it. A file cannot be changed; whoever uploaded it or an admin deletes it. Deleting a comment or a task deletes its files.
 - Files are protected: a link to one carries a file token that lives 3 minutes (see Recipes).
 

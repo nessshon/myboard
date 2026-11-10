@@ -19,9 +19,3 @@ export const LIMITS = {
 // By the name, as a picker may give no type for webp; the server checks the content against the icon
 // field's types in internal/migrations.
 export const PROJECT_ICON_EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
-
-// What a file picker offers; the server checks the content against attachmentTypes in internal/migrations.
-export const ATTACHMENT_EXTENSIONS = (
-  "png jpg jpeg gif webp heic heif pdf txt log md csv json docx xlsx pptx odt ods zip gz tgz " +
-  "mp4 mov webm mp3 wav m4a"
-).split(" ");

@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pocketbase/pocketbase/core"
+
 	"github.com/nessshon/myboard/internal/testutil"
 )
 
@@ -148,5 +150,76 @@ func TestAttachmentRules(t *testing.T) {
 	}
 	if left, err := app.CountRecords("attachments"); err != nil || left != 0 {
 		t.Fatalf("deleting the task leaves %d files (%v)", left, err)
+	}
+}
+
+func TestAttachmentTypes(t *testing.T) {
+	app := testutil.NewApp(t)
+	defer app.Cleanup()
+
+	alice := testutil.User(t, app, "240000011", "member")
+	p := testutil.Project(t, app, "TYP", alice)
+	task := testutil.Record(t, app, "tasks", map[string]any{"project": p.Id, "title": "t"})
+	h := testutil.Handler(t, app)
+	asAlice := testutil.Token(t, alice)
+
+	cases := []struct {
+		name, filename string
+		content        []byte
+		status         int
+	}{
+		{"a script that opens with #! is text", "deploy.py", []byte("#!/usr/bin/env python3\nprint(1)\n"), 200},
+		{"a README that opens with a tag is text", "README.md", []byte("<p align=\"center\">\n  <img src=\"logo.png\">\n</p>\n\n# myboard\n"), 200},
+		{"a component that opens with a tag is text", "View.tsx", []byte("<div className=\"x\">hi</div>\n"), 200},
+		{"a patch is text", "fix.patch", []byte("From 7ef18f1 Mon Sep 17 00:00:00 2001\nFrom: a <a@b.c>\nSubject: [PATCH] Fix\n\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n"), 200},
+		{"an SVG is refused by its name", "logo.svg", []byte("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"), 400},
+		{"a program is refused", "tool.exe", append([]byte("MZ\x90\x00\x03\x00\x00\x00"), make([]byte, 120)...), 400},
+		{"a program named as a picture is refused", "photo.png", append([]byte("MZ\x90\x00\x03\x00\x00\x00"), make([]byte, 120)...), 400},
+	}
+	for _, c := range cases {
+		status, body := upload(t, h, asAlice, map[string]string{"task": task.Id}, c.filename, c.content)
+		if status != c.status {
+			t.Errorf("%s: status %d, want %d (%v)", c.name, status, c.status, body)
+		}
+		if c.status != 400 {
+			continue
+		}
+		data, _ := body["data"].(map[string]any)
+		if file, _ := data["file"].(map[string]any); file["code"] != "validation_invalid_mime_type" {
+			t.Errorf("%s: %v, want PocketBase's own code for a refused type", c.name, body)
+		}
+	}
+}
+
+func TestAttachmentTypesRollBack(t *testing.T) {
+	app := testutil.NewApp(t)
+	defer app.Cleanup()
+
+	mimeTypes := func() []string {
+		attachments, err := app.FindCollectionByNameOrId("attachments")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return attachments.Fields.GetByName("file").(*core.FileField).MimeTypes
+	}
+	if got := mimeTypes(); len(got) != 0 {
+		t.Fatalf("the field still lists types: %v", got)
+	}
+	items := core.AppMigrations.Items()
+	back := 0
+	for i, m := range items {
+		if m.File == "1793836800_attachment_types.go" {
+			back = len(items) - i
+		}
+	}
+	runner := core.NewMigrationsRunner(app, core.AppMigrations)
+	if _, err := runner.Down(back); err != nil {
+		t.Fatal(err)
+	}
+	if got := mimeTypes(); len(got) == 0 {
+		t.Fatal("a rollback leaves the field open to any type")
+	}
+	if _, err := runner.Up(); err != nil {
+		t.Fatal(err)
 	}
 }

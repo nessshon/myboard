@@ -9,8 +9,8 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
-// What a person may attach; PocketBase tells the type by the content, not by the name. No HTML, SVG or
-// programs: a colleague opens these. The same list is in web/src/limits.ts.
+// What a person could attach; PocketBase tells the type by the content, not by the name. No HTML, SVG or
+// programs: a colleague opens these. Since 1793836800_attachment_types.go it is checked in internal/tasks.
 var attachmentTypes = []string{
 	"image/png", "image/jpeg", "image/gif", "image/webp", "image/heic", "image/heif",
 	"application/pdf", "text/plain", "text/csv", "application/json",

@@ -401,10 +401,16 @@ export function uploadFile(
     xhr.open("POST", "/api/collections/attachments/records");
     xhr.setRequestHeader("Authorization", pb.authStore.token);
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
-    xhr.onload = () =>
-      xhr.status === 200
-        ? resolve(JSON.parse(xhr.responseText))
-        : reject(new Error(`upload: ${xhr.status}`));
+    xhr.onload = () => {
+      if (xhr.status === 200) return resolve(JSON.parse(xhr.responseText));
+      let response = {};
+      try {
+        response = JSON.parse(xhr.responseText);
+      } catch {
+        // A proxy's page, not PocketBase's answer.
+      }
+      reject(new ClientResponseError({ url: xhr.responseURL, status: xhr.status, response }));
+    };
     xhr.onerror = () => reject(new Error("upload: network"));
     xhr.send(form);
   });

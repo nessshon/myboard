@@ -295,15 +295,14 @@ export function Discussion({
       // A comment of files alone that got none of them says nothing: take it back, give the files back.
       drop("comments", setComments, made, actionFailed);
       uploads.dropAll(going.map((u) => u.key));
-      setPicked((p) => [
-        ...pick(
-          going.map((u) => u.file),
-          taskId,
-          t,
-        ),
-        ...p,
-      ]);
-      toast(t("file.commentFailed"));
+      const back = pick(
+        going.map((u) => u.file),
+        taskId,
+        t,
+      );
+      setPicked((p) => [...back, ...p]);
+      // A file refused by its type says so on its chip; the toast is for files worth sending again.
+      if (back.some((u) => u.state === "picked")) toast(t("file.commentFailed"));
     }
   }
 
