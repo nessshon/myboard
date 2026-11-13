@@ -6,6 +6,7 @@ import { formatSize } from "../format";
 import { useLang, useT } from "../i18n";
 import { LIMITS } from "../limits";
 import { Icon } from "./Icon";
+import { Code, Markdown } from "./Markdown";
 import s from "./Files.module.css";
 
 export type Upload = {
@@ -23,6 +24,28 @@ export const extension = (name: string) => name.slice(name.lastIndexOf(".") + 1)
 // PocketBase makes thumbs of these only and serves the original for anything else (apis/file.go).
 const isImage = (name: string) => ["png", "jpg", "jpeg", "gif", "webp"].includes(extension(name));
 const isVideo = (name: string) => ["mp4", "mov", "webm"].includes(extension(name));
+// The server takes any text and these formats besides (internal/tasks/attachments.go), so a file named
+// otherwise is text.
+const isText = (name: string) =>
+  !isImage(name) &&
+  !isVideo(name) &&
+  ![
+    "heic",
+    "heif",
+    "pdf",
+    "docx",
+    "xlsx",
+    "pptx",
+    "odt",
+    "ods",
+    "zip",
+    "gz",
+    "tgz",
+    "mp3",
+    "wav",
+    "m4a",
+  ].includes(extension(name));
+const isMarkdown = (name: string) => ["md", "markdown"].includes(extension(name));
 
 let lastKey = 0;
 
@@ -300,7 +323,7 @@ export function Files({
     thumbs.current.set(a.id, fileURL(a, token, "&thumb=144x192t"));
     redraw((n) => n + 1);
   };
-  const viewable = items.filter((a) => isImage(a.name) || isVideo(a.name));
+  const viewable = items.filter((a) => isImage(a.name) || isVideo(a.name) || isText(a.name));
   const at = viewable.findIndex((a) => a.id === viewing);
   const pictures = items.filter((a) => isImage(a.name));
   const others = items.filter((a) => !isImage(a.name));
@@ -402,7 +425,7 @@ export function Files({
             );
             return (
               <span key={a.id} className={s.chip}>
-                {isVideo(a.name) ? (
+                {isVideo(a.name) || isText(a.name) ? (
                   <button
                     type="button"
                     className={s.label}
@@ -504,6 +527,7 @@ function Viewer({
   const many = items.length > 1;
   const at = (step: number) => items[(index + step + items.length) % items.length];
   const close = () => ref.current?.close();
+  const [source, setSource] = useState(false);
   // The list is live: by the end of a slide a file may have come or gone.
   const latest = useRef(items);
   useEffect(() => {
@@ -573,16 +597,32 @@ function Viewer({
           <b>{a.name}</b>
           <span>{formatSize(a.size, lang)}</span>
         </span>
-        <a
-          className={s.tool}
-          href={fileURL(a, token)}
-          target="_blank"
-          rel="noopener"
-          aria-label={t("file.open")}
-          title={t("file.open")}
-        >
-          <Icon name="externalLink" size={18} />
-        </a>
+        {isMarkdown(a.name) && (
+          <button
+            type="button"
+            className={s.tool}
+            aria-label={t("common.preview")}
+            title={t("common.preview")}
+            aria-pressed={!source}
+            onClick={() => setSource(!source)}
+          >
+            <Icon name="eye" size={18} />
+          </button>
+        )}
+        {/* PocketBase serves text for downloading only (tools/filesystem/filesystem.go), so a tab
+            would not show it. */}
+        {!isText(a.name) && (
+          <a
+            className={s.tool}
+            href={fileURL(a, token)}
+            target="_blank"
+            rel="noopener"
+            aria-label={t("file.open")}
+            title={t("file.open")}
+          >
+            <Icon name="externalLink" size={18} />
+          </a>
+        )}
         <a
           className={s.tool}
           href={fileURL(a, token, "&download=1")}
@@ -647,11 +687,12 @@ function Viewer({
               key={items.length === 2 ? `${at(-1).id}-left` : at(-1).id}
               a={at(-1)}
               token={token}
+              source={source}
               onClose={close}
             />
           )}
-          <Slide key={a.id} a={a} token={token} current onClose={close} />
-          {many && <Slide key={at(1).id} a={at(1)} token={token} onClose={close} />}
+          <Slide key={a.id} a={a} token={token} source={source} current onClose={close} />
+          {many && <Slide key={at(1).id} a={at(1)} token={token} source={source} onClose={close} />}
         </div>
         {many && arrow(-1, `${s.nav} ${s.prev}`)}
         {many && arrow(1, `${s.nav} ${s.next}`)}
@@ -668,11 +709,13 @@ function Viewer({
 function Slide({
   a,
   token,
+  source,
   current = false,
   onClose,
 }: {
   a: Attachment;
   token: string;
+  source: boolean;
   current?: boolean;
   onClose: () => void;
 }) {
@@ -687,11 +730,13 @@ function Slide({
 
   return (
     <div
-      className={`${s.slide} ${long ? s.long : ""}`}
+      className={`${s.slide} ${long ? s.long : ""} ${isText(a.name) ? s.text : ""}`}
       inert={!current}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      {isVideo(a.name) ? (
+      {isText(a.name) ? (
+        <TextFile a={a} token={token} source={source} />
+      ) : isVideo(a.name) ? (
         <video ref={video} src={src} controls playsInline />
       ) : (
         <img
@@ -704,5 +749,51 @@ function Slide({
         />
       )}
     </div>
+  );
+}
+
+// Some 30 000 lines of code, more than anyone reads in a window; a bigger file is for downloading.
+const SHOWN = 1024 * 1024;
+
+type Got = { state: "loading" | "big" | "binary" | "failed" } | { state: "shown"; text: string };
+
+function TextFile({ a, token, source }: { a: Attachment; token: string; source: boolean }) {
+  const t = useT();
+  const [got, setGot] = useState<Got>({ state: a.size > SHOWN ? "big" : "loading" });
+  // Fixed while this file is shown, as a slide's src.
+  const src = useMemo(() => fileURL(a, token, "&download=1"), [a.id]);
+
+  useEffect(() => {
+    if (a.size > SHOWN) return;
+    const abort = new AbortController();
+    (async (): Promise<Got> => {
+      const res = await fetch(src, { signal: abort.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      // No text holds a NUL: this one is binary under a name taken for text.
+      return text.includes("\0") ? { state: "binary" } : { state: "shown", text };
+    })()
+      .then((next) => abort.signal.aborted || setGot(next))
+      .catch(() => abort.signal.aborted || setGot({ state: "failed" }));
+    return () => abort.abort();
+  }, [src]);
+
+  if (got.state === "shown")
+    return isMarkdown(a.name) && !source ? (
+      <div className={s.sheet}>
+        <Markdown text={got.text} />
+      </div>
+    ) : (
+      <pre className={`${s.sheet} ${s.code}`}>
+        <Code text={got.text} language={extension(a.name)} />
+      </pre>
+    );
+  if (got.state === "loading") return <div className={s.sheet} />;
+  return (
+    <p className={s.notice}>
+      {got.state === "big"
+        ? t("file.tooBigToShow", { size: SHOWN / 1024 / 1024 })
+        : t(got.state === "binary" ? "file.notText" : "file.loadFailed")}
+    </p>
   );
 }

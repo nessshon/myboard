@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { personName, type User } from "../api";
@@ -17,6 +18,17 @@ const mentionHref = /^user:([a-z0-9]{15})$/;
 // default urlTransform, which drops unsafe ones.
 const urlTransform = (url: string, key: string) =>
   key === "href" && mentionHref.test(url) ? url : defaultUrlTransform(url);
+
+// highlight.js comes with the first code shown, and the text stays plain until it does.
+const Highlight = lazy(() => import("./Highlight").then((m) => ({ default: m.Highlight })));
+
+export function Code({ text, language }: { text: string; language: string }) {
+  return (
+    <Suspense fallback={text}>
+      <Highlight text={text} language={language} />
+    </Suspense>
+  );
+}
 
 export function Markdown({ text, people = [] }: { text: string; people?: User[] }) {
   const components: Components = {

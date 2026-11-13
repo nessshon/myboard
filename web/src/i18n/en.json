@@ -245,5 +245,8 @@
   "file.download": "Download",
   "file.previous": "Previous",
   "file.next": "Next",
-  "file.position": "{n} of {total}"
+  "file.position": "{n} of {total}",
+  "file.tooBigToShow": "The file is over {size} MB, it can only be downloaded.",
+  "file.notText": "This file cannot be shown, only downloaded.",
+  "file.loadFailed": "The file did not load."
 }

@@ -335,6 +335,10 @@
   color: #edeef0;
 }
 
+.tool[aria-pressed="true"] {
+  background: rgb(255 255 255 / 0.16);
+}
+
 @media (hover: hover) {
   .tool:hover {
     background: rgb(255 255 255 / 0.1);
@@ -386,6 +390,38 @@
   width: min(720px, 100%);
   max-height: none;
   margin: 0 auto;
+}
+
+.slide.text {
+  align-items: stretch;
+}
+
+.sheet {
+  width: min(960px, 100%);
+  margin: 0;
+  padding: 16px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.code {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.notice {
+  margin: 0;
+  align-self: center;
+  color: #b0b4ba;
+  text-align: center;
 }
 
 .nav {
@@ -488,6 +524,10 @@
 
   .slide.long img {
     width: 100%;
+  }
+
+  .sheet {
+    border-radius: 0;
   }
 
   .nav {

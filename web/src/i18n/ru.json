@@ -255,5 +255,8 @@
   "file.download": "Скачать",
   "file.previous": "Предыдущий",
   "file.next": "Следующий",
-  "file.position": "{n} из {total}"
+  "file.position": "{n} из {total}",
+  "file.tooBigToShow": "Файл больше {size} МБ, его можно только скачать.",
+  "file.notText": "Этот файл нельзя показать, только скачать.",
+  "file.loadFailed": "Не удалось загрузить файл."
 }
