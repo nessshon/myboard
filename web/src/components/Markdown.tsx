@@ -44,6 +44,19 @@ export function Markdown({ text, people = [] }: { text: string; people?: User[] 
       const person = people.find((p) => p.id === id);
       return person ? <span className={s.mention}>@{personName(person)}</span> : <>{children}</>;
     },
+    // Only a fenced block with a tag (```go) has a class; inline code and an untagged block stay as written.
+    code: ({ className, children }) => {
+      const language = /^language-(.+)/.exec(className ?? "")?.[1];
+      return (
+        <code className={className}>
+          {language && typeof children === "string" ? (
+            <Code text={children} language={language.toLowerCase()} />
+          ) : (
+            children
+          )}
+        </code>
+      );
+    },
   };
   return (
     <div className={s.md}>

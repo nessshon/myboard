@@ -167,4 +167,5 @@ Errors answer `{"status":400,"message":"...","data":{...}}`.
 - Read before you write: look up ids by key, number or name instead of guessing.
 - Change only what you were asked to; PATCH only the fields you change.
 - Keep titles short; put details in `description` as Markdown.
+- Tag a code block with its language (```go, ```python, ```diff): the site colours tagged blocks only.
 - Personal notes are private. Do not share a note unless asked.

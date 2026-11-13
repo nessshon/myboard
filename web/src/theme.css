@@ -44,10 +44,11 @@
   --ok: #2b9a66;
   --warn: #ab6400;
   --code-keyword: #6550b9;
-  --code-string: #218358;
-  --code-number: #cc4e00;
-  --code-title: #0d74ce;
-  --code-type: #ab6400;
+  /* Step 11 darkened by the text colour, so it reads at 4.5:1 on a Markdown code block (--hover) too. */
+  --code-string: color-mix(in srgb, #218358 85%, var(--text));
+  --code-number: color-mix(in srgb, #cc4e00 85%, var(--text));
+  --code-title: color-mix(in srgb, #0d74ce 85%, var(--text));
+  --code-type: color-mix(in srgb, #ab6400 85%, var(--text));
   --tg: #1a75b8;
   --tg-hover: #16679f;
   --knob: #ffffff;
@@ -489,7 +490,7 @@ textarea.input {
   animation: none;
 }
 
-/* The scopes highlight.js gives (src/components/Highlight.ts). */
+/* The scopes highlight.js gives (src/components/Highlight.ts), in attached files and Markdown alike. */
 .hljs-comment,
 .hljs-quote {
   color: var(--muted);
