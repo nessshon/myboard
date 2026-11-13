@@ -2,11 +2,13 @@ import { ClientResponseError } from "pocketbase";
 import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { flushSync } from "react-dom";
 import { drop, fileURL, put, uploadFile, type Attachment, type Setter } from "../api";
+import { copyText } from "../browser";
 import { formatSize } from "../format";
 import { useLang, useT } from "../i18n";
 import { LIMITS } from "../limits";
 import { Icon } from "./Icon";
 import { Code, Markdown } from "./Markdown";
+import { toast } from "./Toast";
 import s from "./Files.module.css";
 
 export type Upload = {
@@ -528,6 +530,18 @@ function Viewer({
   const at = (step: number) => items[(index + step + items.length) % items.length];
   const close = () => ref.current?.close();
   const [source, setSource] = useState(false);
+  // By file id, as each text file arrives: Copy is there once the file is.
+  const [texts, setTexts] = useState(new Map<string, string>());
+  const loaded = (id: string, text: string) => setTexts((m) => new Map(m).set(id, text));
+  const [copied, setCopied] = useState<string | null>(null);
+  function copy(id: string) {
+    copyText(texts.get(id)!)
+      .then(() => {
+        setCopied(id);
+        setTimeout(() => setCopied((c) => (c === id ? null : c)), 2000);
+      })
+      .catch(() => toast(t("common.copyFailed")));
+  }
   // The list is live: by the end of a slide a file may have come or gone.
   const latest = useRef(items);
   useEffect(() => {
@@ -609,6 +623,17 @@ function Viewer({
             <Icon name="eye" size={18} />
           </button>
         )}
+        {texts.has(a.id) && (
+          <button
+            type="button"
+            className={s.tool}
+            aria-label={t(copied === a.id ? "common.copied" : "common.copy")}
+            title={t(copied === a.id ? "common.copied" : "common.copy")}
+            onClick={() => copy(a.id)}
+          >
+            <Icon name={copied === a.id ? "check" : "copy"} size={18} />
+          </button>
+        )}
         {/* PocketBase serves text for downloading only (tools/filesystem/filesystem.go), so a tab
             would not show it. */}
         {!isText(a.name) && (
@@ -688,11 +713,29 @@ function Viewer({
               a={at(-1)}
               token={token}
               source={source}
+              onText={loaded}
               onClose={close}
             />
           )}
-          <Slide key={a.id} a={a} token={token} source={source} current onClose={close} />
-          {many && <Slide key={at(1).id} a={at(1)} token={token} source={source} onClose={close} />}
+          <Slide
+            key={a.id}
+            a={a}
+            token={token}
+            source={source}
+            onText={loaded}
+            current
+            onClose={close}
+          />
+          {many && (
+            <Slide
+              key={at(1).id}
+              a={at(1)}
+              token={token}
+              source={source}
+              onText={loaded}
+              onClose={close}
+            />
+          )}
         </div>
         {many && arrow(-1, `${s.nav} ${s.prev}`)}
         {many && arrow(1, `${s.nav} ${s.next}`)}
@@ -710,12 +753,14 @@ function Slide({
   a,
   token,
   source,
+  onText,
   current = false,
   onClose,
 }: {
   a: Attachment;
   token: string;
   source: boolean;
+  onText: (id: string, text: string) => void;
   current?: boolean;
   onClose: () => void;
 }) {
@@ -735,7 +780,7 @@ function Slide({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       {isText(a.name) ? (
-        <TextFile a={a} token={token} source={source} />
+        <TextFile a={a} token={token} source={source} onText={onText} />
       ) : isVideo(a.name) ? (
         <video ref={video} src={src} controls playsInline />
       ) : (
@@ -757,7 +802,17 @@ const SHOWN = 1024 * 1024;
 
 type Got = { state: "loading" | "big" | "binary" | "failed" } | { state: "shown"; text: string };
 
-function TextFile({ a, token, source }: { a: Attachment; token: string; source: boolean }) {
+function TextFile({
+  a,
+  token,
+  source,
+  onText,
+}: {
+  a: Attachment;
+  token: string;
+  source: boolean;
+  onText: (id: string, text: string) => void;
+}) {
   const t = useT();
   const [got, setGot] = useState<Got>({ state: a.size > SHOWN ? "big" : "loading" });
   // Fixed while this file is shown, as a slide's src.
@@ -773,7 +828,11 @@ function TextFile({ a, token, source }: { a: Attachment; token: string; source: 
       // No text holds a NUL: this one is binary under a name taken for text.
       return text.includes("\0") ? { state: "binary" } : { state: "shown", text };
     })()
-      .then((next) => abort.signal.aborted || setGot(next))
+      .then((next) => {
+        if (abort.signal.aborted) return;
+        setGot(next);
+        if (next.state === "shown") onText(a.id, next.text);
+      })
       .catch(() => abort.signal.aborted || setGot({ state: "failed" }));
     return () => abort.abort();
   }, [src]);
